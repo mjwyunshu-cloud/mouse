@@ -429,7 +429,14 @@
 
           return (
             <div className="flex flex-col items-center justify-center min-h-screen px-6 py-10 fade-in overflow-auto">
-              <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-purple-600 underline underline-offset-8 mb-8 text-center">维度 04：纠缠镜像同步 (随机观测模式)</div>
+              {/* 新增：玩法文字提示 */}
+              <div className="space-y-3 mb-6 text-center">
+                  <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-purple-600 underline underline-offset-8">维度 04：纠缠镜像同步</div>
+                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase max-w-xs mx-auto">
+                    操控鼠鼠移动 · 警长镜像同步 · 利用红色障碍校准间距 · 让黑白角色同时踏入发光点
+                  </p>
+              </div>
+
               <div className="bg-white/50 p-4 md:p-12 rounded-[3rem] md:rounded-[5rem] shadow-2xl border-2 border-white relative scale-90 md:scale-95 origin-center">
                 <div className="grid grid-cols-7 border-t border-l border-slate-200 mosaic-grid-bg relative z-10">
                   {Array.from({ length: 49 }).map((_, i) => {
@@ -456,7 +463,7 @@
           );
         };
 
-        // --- 5. 庆祝结局 (优化布局与字号) ---
+        // --- 5. 庆祝结局 ---
         const Celebration = ({ totalTime, onRestart, onPrev }) => {
           const score = Math.max(1000, Math.floor(10000 - totalTime * 20));
           const timeFormatted = totalTime.toFixed(1);
@@ -473,7 +480,6 @@
                   <h1 className="text-[32px] md:text-[54px] font-bold tracking-tight text-[#3D3D3D] italic uppercase leading-tight" style={{ filter: 'url(#handDrawnLine)' }}>鼠鼠猫猫赢啦！</h1>
                   <p className="text-slate-400 text-[11px] md:text-[14px] font-bold tracking-[0.5em] uppercase">Observation Mastered</p>
                   
-                  {/* 积分展示区 - 缩小 padding 以节省空间 */}
                   <div className="flex gap-6 md:gap-10 justify-center items-center py-4">
                         <div className="text-center">
                             <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-1">Time</p>
