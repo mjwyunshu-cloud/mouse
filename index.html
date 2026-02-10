@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鼠猫纠缠态：观测者协议</title>
+    <!-- 加载核心运行环境 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background-color: #FDFCF8; 
+            margin: 0; 
+            font-family: "PingFang SC", "Microsoft YaHei", serif;
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .mosaic-grid-bg {
+          background-image: conic-gradient(#F9F7F2 90deg, #F0EDE6 90deg 180deg, #F9F7F2 180deg 270deg, #F0EDE6 270deg);
+          background-size: 60px 60px;
+        }
+
+        .fade-in { animation: fadeIn 1.2s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .quantum-wobble { animation: wobble 8s ease-in-out infinite; }
+        @keyframes wobble { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-10px, -15px) rotate(1.2deg); } }
+        
+        .art-button {
+          background: #3D3D3D; color: #FDFCF8; padding: 1.2rem 4rem; border-radius: 10px;
+          font-weight: 500; letter-spacing: 0.4em; border: 2px solid #1A1A1A;
+          transition: all 0.4s; filter: url(#handDrawnLine);
+        }
+        .art-button:hover { background: #1A1A1A; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+        
+        .art-button-secondary {
+          background: transparent; color: #3D3D3D; padding: 1rem 3rem; border-radius: 10px;
+          font-weight: 500; letter-spacing: 0.2em; border: 1.5px solid #3D3D3D;
+          transition: all 0.4s; filter: url(#handDrawnLine);
+        }
+        .art-button-secondary:hover { background: #3D3D3D; color: #FDFCF8; }
+
+        .obstacle-red-double {
+            position: absolute; width: 34px; height: 34px; 
+            border: 2px solid #D66B6B; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            filter: url(#handDrawnLine);
+        }
+        .obstacle-red-double::after { content: ''; width: 14px; height: 14px; border: 1.5px solid #D66B6B; border-radius: 50%; }
+
+        .target-blue-ring {
+            position: absolute; width: 50px; height: 50px; 
+            border: 2.2px solid #8FAADC; border-radius: 50%;
+            opacity: 0.5; animation: art-pulse 4s infinite;
+        }
+        @keyframes art-pulse { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } }
+
+        .portal-spin { animation: p-spin 6s linear infinite; }
+        @keyframes p-spin { from { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } to { transform: rotate(360deg) scale(1); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        // --- 核心艺术资产：SVG 滤镜 ---
+        const ArtFilters = () => (
+          <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+            <defs>
+              <pattern id="pencilTexture" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="0" x2="10" y2="10" stroke="#000" strokeWidth="0.6" opacity="0.12" />
+                <line x1="10" y1="0" x2="0" y2="10" stroke="#000" strokeWidth="0.4" opacity="0.08" />
+              </pattern>
+              <filter id="handDrawnLine">
+                <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="4" result="noise" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" />
+              </filter>
+            </defs>
+          </svg>
+        );
+
+        // --- 1:1 精细复刻：手绘质感鼠鼠 (几何圆润态) ---
+        const MouseEntity = ({ className, style, highSaturation = true, holdingController = false }) => (
+          <svg viewBox="0 0 100 100" className={`${className} ${highSaturation ? '' : 'grayscale opacity-60'}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M75 60 C 90 65, 100 50, 95 35 C 90 20, 75 25, 70 35" stroke="#E6A6B3" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 4" />
+            <circle cx="50" cy="65" r="28" fill="#FFFFFF" stroke="#AAA" strokeWidth="1" />
+            <circle cx="50" cy="65" r="28" fill="url(#pencilTexture)" />
+            <circle cx="32" cy="40" r="16" fill="#3D3D3D" /> 
+            <circle cx="65" cy="38" r="18" fill="#D66B6B" opacity="0.9" /> 
+            <rect x="42" y="58" width="5" height="5" rx="2" fill="#1A1A1A" />
+            <circle cx="28" cy="65" r="4" fill="#D66B6B" />
+            {holdingController && (
+              <g transform="translate(70, 52)">
+                <rect width="14" height="26" rx="6" fill="#2D2D2D" stroke="#000" strokeWidth="1" />
+                <circle cx="7" cy="10" r="4" fill="#3B82F6" className="animate-pulse" />
+                <line x1="7" y1="18" x2="7" y2="22" stroke="#444" strokeWidth="1.5" />
+              </g>
+            )}
+            <ellipse cx="40" cy="90" rx="4" ry="2" fill="#E6A6B3" opacity="0.5" />
+            <ellipse cx="60" cy="90" rx="4" ry="2" fill="#E6A6B3" opacity="0.5" />
+          </svg>
+        );
+
+        // --- 1:1 精细复刻：手绘质感警长猫 ---
+        const CatEntity = ({ className, style, isGhost = false, allBlack = false, pose = 'mop' }) => (
+          <svg viewBox="0 0 100 140" className={`${className} ${isGhost ? 'opacity-30 grayscale' : ''}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
+            {pose === 'mop' && <rect x="88" y="5" width="4" height="125" rx="2" fill={allBlack ? "#000" : "#7A6F62"} />}
+            {pose === 'mop' && <path d="M72 130 L 102 130 L 98 138 L 76 138 Z" fill={allBlack ? "#000" : "#D1CEC7"} stroke={allBlack ? "#000" : "#7A6F62"} strokeWidth="1" />}
+            <path d="M12 120 Q 12 75, 45 75 Q 78 75, 78 120 L 78 130 Q 45 138, 12 130 Z" fill={allBlack ? "#000" : "#1A1A1A"} />
+            <path d="M12 120 Q 12 75, 45 75 Q 78 75, 78 120" fill="url(#pencilTexture)" opacity="0.25" />
+            <path d="M22 95 Q 45 90, 68 95 L 68 115 Q 45 120, 22 115 Z" fill={allBlack ? "#000" : "#FFFFFF"} stroke="#EEE" strokeWidth="0.5" />
+            <path d="M20 75 Q 20 42, 45 42 Q 70 42, 70 75 L 70 85 Q 45 92, 20 85 Z" fill={allBlack ? "#000" : "#1A1A1A"} />
+            <path d="M25 45 L 12 18 L 40 42 Z" fill={allBlack ? "#000" : "#1A1A1A"} />
+            <path d="M65 45 L 78 18 L 50 42 Z" fill={allBlack ? "#000" : "#1A1A1A"} />
+            <rect x="32" y="62" width="16" height="4" rx="1" fill={allBlack ? "#000" : "#FFF"} opacity={allBlack ? 0.1 : 1} />
+            <rect x="52" y="62" width="16" height="4" rx="1" fill={allBlack ? "#000" : "#FFF"} opacity={allBlack ? 0.1 : 1} />
+            <rect x="38" y="62" width="5" height="4" fill="#000" />
+            <rect x="58" y="62" width="5" height="4" fill="#000" />
+            <path d="M38 85 L 52 85 L 48 93 L 42 93 Z" fill={allBlack ? "#0a0a0a" : "#D66B6B"} />
+            <path d="M43 93 L 38 118 L 52 118 L 47 93 Z" fill={allBlack ? "#0a0a0a" : "#D66B6B"} />
+          </svg>
+        );
+
+        const StartPage = ({ onStart }) => {
+          const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+          return (
+            <div onMouseMove={(e) => setMousePos({ x: (e.clientX/window.innerWidth-0.5)*20, y: (e.clientY/window.innerHeight-0.5)*20 })} 
+                 className="flex flex-col items-center justify-center min-h-screen text-center space-y-12 overflow-hidden relative pb-32">
+              <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" style={{ filter: 'url(#handDrawnLine)' }}>
+                <path d="M-100 800 Q 200 650 500 780 T 1200 680 V 1000 H -100 Z" fill="url(#pencilTexture)" />
+                <path d="M50 300 Q 150 250 250 320 T 450 300" stroke="#BBB" fill="none" strokeWidth="1.5" />
+                <circle cx="850" cy="150" r="40" stroke="#BBB" fill="none" strokeDasharray="5 5" />
+              </svg>
+              
+              <div className="relative w-full max-w-4xl h-[450px] flex items-center justify-center">
+                <div className="absolute transition-transform duration-700 ease-out z-10" style={{ transform: `translate(${mousePos.x * -2.5}px, ${mousePos.y * -2.5}px)`, left: '15%', top: '35%' }}>
+                  <div className="opacity-20 grayscale scale-75 rotate-[-12deg] quantum-wobble"><CatEntity className="w-44 h-56" /></div>
+                </div>
+                <div className="relative z-20 transition-transform duration-200 ease-out" style={{ transform: `translate(${mousePos.x * 1}px, ${mousePos.y * 1}px)` }}>
+                  <div className="w-80 h-80 rounded-[5rem] bg-white/40 backdrop-blur-md border-2 border-white/50 shadow-xl flex items-center justify-center relative">
+                     <MouseEntity className="w-64 h-56 filter drop-shadow(0 20px 40px rgba(0,0,0,0.06))" holdingController={true} />
+                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-[#3D3D3D] text-[#FDFCF8] text-[10px] font-black tracking-[0.5em] rounded-xl shadow-2xl">THE OBSERVER</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-16 z-30">
+                <div className="space-y-4">
+                  <h1 className="text-[60px] lg:text-[85px] font-light tracking-tighter text-slate-800 italic leading-none select-none" style={{ filter: 'url(#handDrawnLine)' }}>鼠猫纠缠态</h1>
+                  <p className="text-slate-500 text-[13px] font-bold tracking-[1.2em] uppercase pl-[1.2em]">鼠猫大作 · 观测者协议</p>
+                </div>
+                <button onClick={onStart} className="art-button">启动实验协议 (START)</button>
+              </div>
+            </div>
+          );
+        };
+
+        const LevelObserver = ({ onWin }) => {
+          const [step, setStep] = useState(0);
+          const quotes = ["叠加态：警长正处于‘既想吃鱼又在拖地’的玄学平衡中，不要叫醒他。", "观测者效应：你的目光比猫薄荷还管用，一看他，他就不得不变成一个定值。", "退相干：实验室的噪音让波函数破了防，现实总爱在这种尴尬时刻坍缩。", "纠缠：当你抓着鼠鼠的尾巴，猫警长在那边也会跟着打喷嚏。", "观测点已对焦。准备好围观这场伟大的、毫无意义的量子博弈了吗？"];
+          return (
+            <div className="flex flex-col items-center justify-center min-h-screen space-y-20 text-center fade-in">
+              <div className="p-16 bg-white/60 rounded-[4rem] shadow-sm border border-slate-200 italic text-slate-500 text-xl flex items-center justify-center h-56 px-20 max-w-2xl leading-relaxed" style={{ filter: 'url(#handDrawnLine)' }}>"{quotes[step]}"</div>
+              <div className="flex justify-between relative w-full max-w-sm py-12 px-10">
+                <div className="absolute top-1/2 left-16 right-16 h-[1px] bg-slate-300 -z-10" />
+                {[0,1,2,3,4].map(i => <div key={i} className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-700 ${i===step?'bg-slate-700 border-slate-700 scale-150 shadow-lg':i<step?'bg-slate-400 border-transparent':'bg-white border-slate-200'}`} />)}
+              </div>
+              <button onClick={() => step < 4 ? setStep(s => s+1) : onWin()} className="art-button">{step < 4 ? '同步认知' : '锁定现实'}</button>
+            </div>
+          );
+        };
+
+        const LevelEscape = ({ onWin }) => {
+          const size = 8;
+          const [mPos, setMPos] = useState({ x: 0, y: 7 });
+          const [cPos, setCPos] = useState({ x: 7, y: 0 });
+          const [mv, setMv] = useState(0);
+          const exit = { x: 7, y: 0 };
+          const move = (dx, dy) => {
+            const nx = mPos.x + dx, ny = mPos.y + dy;
+            if (nx<0 || nx>7 || ny<0 || ny>7) return;
+            setMPos({ x: nx, y: ny });
+            if (nx === exit.x && ny === exit.y) onWin();
+            
+            // 难度提升：警长每2步移动一次 (原为3步)
+            if ((mv + 1) % 2 === 0) {
+              const dX = nx - cPos.x, dY = ny - cPos.y;
+              setCPos(p => ({ x: p.x + (Math.abs(dX) > Math.abs(dY) ? Math.sign(dX) : 0), y: p.y + (Math.abs(dY) >= Math.abs(dX) ? Math.sign(dY) : 0) }));
+            }
+            setMv(v => v+1);
+          };
+          useEffect(() => {
+            if (mPos.x === cPos.x && mPos.y === cPos.y) setTimeout(() => { setMPos({x:0, y:7}); setCPos({x:7,y:0}); setMv(0); }, 300);
+            const h = (e) => { if (['ArrowUp','w'].includes(e.key)) move(0,-1); if (['ArrowDown','s'].includes(e.key)) move(0,1); if (['ArrowLeft','a'].includes(e.key)) move(-1,0); if (['ArrowRight','d'].includes(e.key)) move(1,0); };
+            window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+          }, [mPos, cPos, mv]);
+          return (
+            <div className="flex flex-col items-center justify-center min-h-screen space-y-12 fade-in">
+              <div className="text-[11px] font-bold uppercase tracking-[0.6em] text-[#D66B6B] underline underline-offset-8">维度 02: 绝地逃亡 (Hard)</div>
+              <div className="bg-white/50 p-6 rounded-[4rem] shadow-xl border border-white">
+                <div className="grid grid-cols-8 border border-slate-200">
+                  {Array.from({ length: 64 }).map((_, i) => {
+                    const x = i%8, y = Math.floor(i/8);
+                    return <div key={i} style={{ width: 60, height: 60, background: (x+y)%2===0?'#F9F7F2':'#fff' }} className="flex items-center justify-center relative border border-slate-50">
+                      {exit.x===x && exit.y===y && <div className="absolute inset-2 bg-[#8FAADC]/20 rounded-full portal-spin border border-[#8FAADC]" />}
+                      {cPos.x===x && cPos.y===y && <CatEntity className="w-12 h-14 relative z-20" pose="mop" />}
+                      {mPos.x===x && mPos.y===y && <MouseEntity className="w-10 h-10 relative z-30" />}
+                    </div>;
+                  })}
+                </div>
+              </div>
+              <p className="text-slate-400 text-[10px] tracking-[0.3em] uppercase italic">警长进入超相干追踪状态 · 闪现步频提升</p>
+            </div>
+          );
+        };
+
+        const LevelCapture = ({ onWin }) => {
+          const [score, setScore] = useState(0);
+          const [targets, setTargets] = useState([]);
+          const [hazards, setHazards] = useState([]);
+          const [status, setStatus] = useState('playing'); 
+          const catPos = useRef({ x: 50, y: 50 });
+          const requestRef = useRef();
+
+          useEffect(() => {
+            if (status !== 'playing') return;
+            // 老鼠生成略慢，强制你等待时机
+            const s1 = setInterval(() => setTargets(p => [...p, { id: Math.random(), x: 15+Math.random()*70, y: 15+Math.random()*70 }].slice(-5)), 1700);
+            // 难度提升：毒瓶掉落频率极高，速度加快
+            const s2 = setInterval(() => setHazards(p => [...p, { id: Math.random(), x: 5+Math.random()*90, y:-10, speed: 1.2 + Math.random() * 1.5 }].slice(-10)), 850);
+            return () => { clearInterval(s1); clearInterval(s2); };
+          }, [status]);
+
+          const loop = useCallback(() => {
+            if (status !== 'playing') return;
+            setHazards(p => {
+              const n = p.map(h => ({ ...h, y: h.y+h.speed })).filter(h => h.y<115);
+              for (let h of n) if (Math.sqrt(Math.pow(h.x-catPos.current.x,2)+Math.pow(h.y-catPos.current.y,2)) < 9) { setStatus('lose'); return []; }
+              return n;
+            });
+            setTargets(p => {
+              const hit = p.find(m => Math.sqrt(Math.pow(m.x-catPos.current.x,2)+Math.pow(m.y-catPos.current.y,2)) < 12);
+              if (hit) { setScore(s => { const ns = s+1; if(ns>=10) setStatus('win'); return ns; }); return p.filter(m => m.id !== hit.id); }
+              return p;
+            });
+            requestRef.current = requestAnimationFrame(loop);
+          }, [status]);
+
+          useEffect(() => { requestRef.current = requestAnimationFrame(loop); return () => cancelAnimationFrame(requestRef.current); }, [loop]);
+
+          return (
+            <div className="flex flex-col items-center justify-center min-h-screen space-y-8 text-center fade-in relative">
+              <div className="space-y-4">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.6em] text-orange-400 underline underline-offset-8">维度 03: 警长抓老鼠 (Hard)</div>
+                  <p className="text-slate-400 text-[12px] font-medium tracking-[0.2em] italic uppercase">
+                    鼠标操控警长 · 避开密集的红色干扰 · 回收 10 只样本
+                  </p>
+              </div>
+              
+              <div className="relative h-[550px] w-[450px] bg-white rounded-[5rem] shadow-2xl border border-slate-100 overflow-hidden cursor-none"
+                   onMouseMove={(e) => { if(status!=='playing')return; const r=e.currentTarget.getBoundingClientRect(); catPos.current={x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100}; }}>
+                <div className="absolute inset-0 opacity-10" style={{ background: 'url(#pencilTexture)' }} />
+                {targets.map(m => <div key={m.id} className="absolute animate-pulse" style={{ left: `${m.x}%`, top: `${m.y}%`, transform: 'translate(-50%, -50%)' }}><MouseEntity className="w-16 h-14" /></div>)}
+                {hazards.map(h => (
+                    <div key={h.id} className="absolute" style={{ left: `${h.x}%`, top: `${h.y}%`, transform: 'translate(-50%, -50%)' }}>
+                      <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#D66B6B" strokeWidth="2" style={{ filter: 'url(#handDrawnLine)' }}>
+                        <path d="M10 2v8L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45L14 10V2" />
+                        <path d="M8.5 2h7" strokeDasharray="2 2" />
+                      </svg>
+                    </div>
+                ))}
+                <div className="absolute pointer-events-none" style={{ left: `${catPos.current.x}%`, top: `${catPos.current.y}%`, transform: 'translate(-50%, -50%)' }}><CatEntity className="w-28 h-28" pose="mop" /></div>
+                <div className="absolute top-10 left-10 text-[14px] font-bold text-slate-300 tracking-[0.5em]">CAPTURED: {score}/10</div>
+                
+                {status !== 'playing' && (
+                  <div className="absolute inset-0 z-[100] bg-[#FDFCF8]/95 backdrop-blur-md flex flex-col items-center justify-center text-center p-8 space-y-12">
+                    <div className="p-16 bg-white rounded-[5rem] shadow-2xl border border-white max-w-sm" style={{ filter: 'url(#handDrawnLine)' }}>
+                      <h2 className="text-4xl font-light text-slate-900 mb-6 italic uppercase">{status==='win'?'观测成功':'实验碎裂'}</h2>
+                      <p className="text-slate-500 text-[13px] font-medium tracking-widest uppercase">{status==='win'?'样本已全部锁定。':'警长触碰了高频毒瓶。'}</p>
+                    </div>
+                    <button onClick={status==='win'?onWin:() => {setScore(0); setHazards([]); setTargets([]); setStatus('playing');}} className="art-button">{status==='win'?'维度 04':'重新校准'}</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        const LevelMirrorPuzzle = ({ onWin }) => {
+          const size = 7;
+          const [mPos, setMPos] = useState({ x: 1, y: 3 });
+          const [cPos, setCPos] = useState({ x: 5, y: 3 });
+          const targetM = { x: 2, y: 1 }, targetC = { x: 4, y: 5 };
+          const blks = [{ x: 3, y: 3 }, { x: 1, y: 1 }, { x: 5, y: 5 }, { x: 3, y: 0 }, { x: 3, y: 6 }];
+          const move = (dx, dy) => {
+            const isW = (p) => p.x < 0 || p.x > 6 || p.y < 0 || p.y > 6;
+            const isB = (p) => blks.some(b => b.x === p.x && b.y === p.y);
+            const nXm = mPos.x + dx, nYm = mPos.y + dy;
+            const nXc = cPos.x - dx, nYc = cPos.y + dy;
+            const fM = (isW({ x: nXm, y: nYm }) || isB({ x: nXm, y: nYm })) ? mPos : { x: nXm, y: nYm };
+            const fC = (isW({ x: nXc, y: nYc }) || isB({ x: nXc, y: nYc })) ? cPos : { x: nXc, y: nYc };
+            setMPos(fM); setCPos(fC);
+            if ((fM.x === targetM.x && fM.y === targetM.y && fC.x === targetC.x && fC.y === targetC.y) || (fM.x === targetC.x && fM.y === targetC.y && fC.x === targetM.x && fC.y === targetM.y)) onWin();
+          };
+          useEffect(() => {
+            const h = (e) => { if (['ArrowUp','w'].includes(e.key)) move(0,-1); if (['ArrowDown','s'].includes(e.key)) move(0,1); if (['ArrowLeft','a'].includes(e.key)) move(-1,0); if (['ArrowRight','d'].includes(e.key)) move(1,0); };
+            window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+          }, [mPos, cPos]);
+          return (
+            <div className="flex flex-col items-center justify-center min-h-screen space-y-12 text-center fade-in">
+              <div className="text-[11px] font-bold uppercase tracking-[0.5em] text-purple-600 underline underline-offset-8">维度 04：纠缠镜像同步</div>
+              <div className="bg-white/50 p-12 rounded-[5rem] shadow-2xl border-2 border-white relative scale-95">
+                <div className="grid grid-cols-7 border-t border-l border-slate-200 mosaic-grid-bg relative z-10">
+                  {Array.from({ length: 49 }).map((_, i) => {
+                    const x = i % 7, y = Math.floor(i / 7);
+                    const isM = mPos.x === x && mPos.y === y;
+                    const isC = cPos.x === x && cPos.y === y;
+                    const isTM = targetM.x === x && targetM.y === y;
+                    const isTC = targetC.x === x && targetC.y === y;
+                    const isB = blks.some(b => b.x === x && b.y === y);
+                    return (
+                      <div key={i} style={{ width: 60, height: 60 }} className="flex items-center justify-center relative border-r border-b border-slate-200">
+                        {isTM && <div className="target-blue-ring" />}
+                        {isTC && <div className="target-blue-ring border-blue-400" />} 
+                        {isB && <div className="obstacle-red-double" />}
+                        {isM && <MouseEntity className="w-16 h-14 relative z-30 hand-drawn-shadow" />}
+                        {isC && <CatEntity className="w-14 h-18 relative z-20" allBlack={true} pose="no-mop" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="text-slate-400 text-[10px] tracking-[0.3em] uppercase italic">利用障碍校准距离 · 达成双向定态</p>
+            </div>
+          );
+        };
+
+        const Celebration = ({ totalTime, onRestart, onPrev }) => {
+          // 积分计算逻辑：基础分10000，每秒扣除20分，最低分1000
+          const score = Math.max(1000, Math.floor(10000 - totalTime * 20));
+          const timeFormatted = totalTime.toFixed(1);
+
+          return (
+            <div className="flex flex-col items-center justify-center min-h-screen text-center space-y-24 fade-in">
+              <div className="relative flex justify-center items-end gap-24">
+                <div className="absolute inset-0 bg-blue-50/20 rounded-full blur-[180px] scale-150" />
+                <MouseEntity className="w-64 h-56 brightness-110 hand-drawn-shadow" holdingController={true} />
+                <CatEntity className="w-48 h-56 opacity-80" pose="no-mop" />
+              </div>
+              <div className="space-y-12">
+                <div className="space-y-6">
+                  <h1 className="text-[90px] font-light tracking-tighter text-[#3D3D3D] italic uppercase leading-none" style={{ filter: 'url(#handDrawnLine)' }}>纠缠圆满</h1>
+                  <p className="text-slate-400 text-[14px] font-bold tracking-[0.8em] uppercase">Ecological Harmony</p>
+                </div>
+                
+                {/* 积分展示区 */}
+                <div className="p-10 bg-white/40 rounded-[3rem] border border-white flex gap-20 justify-center hand-drawn-shadow">
+                    <div className="text-left">
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Observation Time</p>
+                        <p className="text-4xl font-light italic text-slate-800">{timeFormatted}<span className="text-lg">s</span></p>
+                    </div>
+                    <div className="w-[1px] bg-slate-200 opacity-50" />
+                    <div className="text-left">
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Quantum Score</p>
+                        <p className="text-4xl font-light italic text-blue-600">{score}</p>
+                    </div>
+                </div>
+
+                <div className="flex gap-6 justify-center">
+                    <button onClick={onPrev} className="art-button-secondary">重返上一关</button>
+                    <button onClick={onRestart} className="art-button">重启观测实验</button>
+                </div>
+              </div>
+              <p className="text-slate-400 text-[13px] leading-loose px-14 font-light italic text-center max-w-xl">
+                “这不是某一方的获胜，而是我们一起赢得了这场共振中的和谐解。”
+              </p>
+            </div>
+          );
+        };
+
+        const App = () => {
+          const [level, setLevel] = useState(0);
+          const [transitioning, setTransitioning] = useState(false);
+          const [startTime, setStartTime] = useState(0);
+          const [totalTime, setTotalTime] = useState(0);
+
+          const startLevel = (next) => {
+            setTransitioning(true);
+            setTimeout(() => { 
+                // 从第二关开始计时
+                if (next === 2) setStartTime(Date.now());
+                // 进入终局时记录总耗时
+                if (next === 5) setTotalTime((Date.now() - startTime) / 1000);
+                setLevel(next); 
+                setTransitioning(false); 
+            }, 700);
+          };
+
+          return (
+            <div className={`min-h-screen bg-[#FDFCF8] transition-all duration-1000 ${transitioning ? 'opacity-0 blur-xl scale-95' : 'opacity-100'}`}>
+              <ArtFilters />
+              {level === 0 && <StartPage onStart={() => startLevel(1)} />}
+              {level === 1 && <LevelObserver onWin={() => startLevel(2)} />}
+              {level === 2 && <LevelEscape onWin={() => startLevel(3)} />}
+              {level === 3 && <LevelCapture onWin={() => startLevel(4)} />}
+              {level === 4 && <LevelMirrorPuzzle onWin={() => startLevel(5)} />}
+              {level === 5 && <Celebration totalTime={totalTime} onRestart={() => setLevel(0)} onPrev={() => setLevel(4)} />}
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
