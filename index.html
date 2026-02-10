@@ -29,23 +29,27 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
         .quantum-wobble { animation: wobble 8s ease-in-out infinite; }
-        @keyframes wobble { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-8px, -12px) rotate(1.2deg); } }
+        @keyframes wobble { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-10px, -15px) rotate(1.2deg); } }
         
+        /* 增强反馈的按钮 */
         .art-button {
           background: #3D3D3D; color: #FDFCF8; padding: 1rem 3rem; border-radius: 10px;
           font-weight: 500; letter-spacing: 0.4em; border: 2px solid #1A1A1A;
-          transition: all 0.4s; filter: url(#handDrawnLine);
+          transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+          filter: url(#handDrawnLine);
           font-size: 14px;
         }
         @media (min-width: 768px) { .art-button { padding: 1.2rem 4rem; font-size: 16px; } }
-        .art-button:hover { background: #1A1A1A; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+        .art-button:hover { background: #1A1A1A; transform: translateY(-3px); }
+        .art-button:active { transform: scale(0.9) translateY(0); background: #000; }
         
         .art-button-secondary {
           background: transparent; color: #3D3D3D; padding: 0.8rem 2rem; border-radius: 10px;
           font-weight: 500; letter-spacing: 0.2em; border: 1.5px solid #3D3D3D;
-          transition: all 0.4s; filter: url(#handDrawnLine);
+          transition: all 0.2s; filter: url(#handDrawnLine);
           font-size: 13px;
         }
+        .art-button-secondary:active { transform: scale(0.9); background: #3D3D3D; color: white; }
 
         .obstacle-red-double {
             position: absolute; width: 34px; height: 34px; 
@@ -54,6 +58,14 @@
             filter: url(#handDrawnLine);
         }
         .obstacle-red-double::after { content: ''; width: 14px; height: 14px; border: 1.5px solid #D66B6B; border-radius: 50%; }
+
+        /* 强化版的观测光环 */
+        .observation-halo {
+            position: absolute; width: 80px; height: 80px;
+            border: 1px dashed #3D3D3D; border-radius: 50%;
+            opacity: 0.3; animation: halo-rotate 10s linear infinite;
+        }
+        @keyframes halo-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         .target-blue-ring {
             position: absolute; width: 50px; height: 50px; 
@@ -65,18 +77,22 @@
         .portal-spin { animation: p-spin 6s linear infinite; }
         @keyframes p-spin { from { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } to { transform: rotate(360deg) scale(1); } }
 
-        /* 手机端手绘方向键 */
+        /* 手机端手绘方向键反馈增强 */
         .dpad-btn {
-            width: 54px; height: 54px;
-            background: white; border: 1.5px solid #3D3D3D;
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            width: 60px; height: 60px;
+            background: white; border: 2px solid #3D3D3D;
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
             filter: url(#handDrawnLine);
-            font-weight: bold; color: #3D3D3D;
-            box-shadow: 0 4px 0 #3D3D3D;
+            font-weight: bold; color: #3D3D3D; font-size: 20px;
+            box-shadow: 0 5px 0 #3D3D3D;
             transition: all 0.1s;
             -webkit-tap-highlight-color: transparent;
         }
-        .dpad-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #3D3D3D; background: #F0EDE6; }
+        .dpad-btn:active { 
+            transform: translateY(4px); 
+            box-shadow: 0 1px 0 #3D3D3D; 
+            background: #EAE8E4;
+        }
     </style>
 </head>
 <body>
@@ -84,6 +100,13 @@
 
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef } = React;
+
+        // --- 触感辅助函数 ---
+        const hapticFeedback = () => {
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(10); // 微弱震动
+            }
+        };
 
         // --- 核心艺术资产：SVG 滤镜 ---
         const ArtFilters = () => (
@@ -101,7 +124,7 @@
           </svg>
         );
 
-        // --- 1:1 手绘鼠鼠 (几何圆润态) ---
+        // --- 1:1 手绘鼠鼠 ---
         const MouseEntity = ({ className, style, highSaturation = true, holdingController = false }) => (
           <svg viewBox="0 0 100 100" className={`${className} ${highSaturation ? '' : 'grayscale opacity-60'}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M75 60 C 90 65, 100 50, 95 35 C 90 20, 75 25, 70 35" stroke="#E6A6B3" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 4" />
@@ -144,13 +167,13 @@
         );
 
         const DPad = ({ onMove }) => (
-          <div className="flex flex-col items-center gap-2 mt-8 md:mt-12 lg:hidden">
-            <button onTouchStart={(e) => { e.preventDefault(); onMove(0, -1); }} className="dpad-btn">↑</button>
-            <div className="flex gap-10">
-              <button onTouchStart={(e) => { e.preventDefault(); onMove(-1, 0); }} className="dpad-btn">←</button>
-              <button onTouchStart={(e) => { e.preventDefault(); onMove(1, 0); }} className="dpad-btn">→</button>
+          <div className="flex flex-col items-center gap-2 mt-10 md:mt-12 lg:hidden">
+            <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(0, -1); }} className="dpad-btn">↑</button>
+            <div className="flex gap-12">
+              <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(-1, 0); }} className="dpad-btn">←</button>
+              <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(1, 0); }} className="dpad-btn">→</button>
             </div>
-            <button onTouchStart={(e) => { e.preventDefault(); onMove(0, 1); }} className="dpad-btn">↓</button>
+            <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(0, 1); }} className="dpad-btn">↓</button>
           </div>
         );
 
@@ -171,7 +194,7 @@
               </svg>
               
               <div className="relative w-full max-w-sm aspect-square flex items-center justify-center scale-90 md:scale-100">
-                <div className="absolute transition-transform duration-700 ease-out z-10" style={{ transform: `translate(${mousePos.x * -2.5}px, ${mousePos.y * -2.5}px)`, left: '5%', top: '25%' }}>
+                <div className="absolute transition-transform duration-700 ease-out z-10" style={{ transform: `translate(${mousePos.x * -2.5}px, ${mousePos.y * -2.5}px)`, left: '10%', top: '20%' }}>
                   <div className="opacity-20 grayscale scale-75 rotate-[-12deg] quantum-wobble"><CatEntity className="w-32 md:w-44 h-auto" /></div>
                 </div>
                 <div className="relative z-20 transition-transform duration-200 ease-out" style={{ transform: `translate(${mousePos.x * 1}px, ${mousePos.y * 1}px)` }}>
@@ -182,12 +205,12 @@
                 </div>
               </div>
 
-              <div className="space-y-12 z-30 mt-6 md:mt-10">
+              <div className="space-y-12 z-30 mt-12 md:mt-16">
                 <div className="space-y-4">
                   <h1 className="text-[50px] md:text-[85px] font-light tracking-tighter text-slate-800 italic leading-none select-none" style={{ filter: 'url(#handDrawnLine)' }}>鼠猫纠缠态</h1>
                   <p className="text-slate-500 text-[10px] md:text-[13px] font-bold tracking-[1.2em] uppercase pl-[1.2em]">鼠猫大作 · 观测者协议</p>
                 </div>
-                <button onClick={onStart} className="art-button">启动实验协议 (START)</button>
+                <button onClick={() => { hapticFeedback(); onStart(); }} className="art-button">启动实验协议 (START)</button>
               </div>
             </div>
           );
@@ -203,7 +226,7 @@
                 <div className="absolute top-1/2 left-12 right-12 h-[1px] bg-slate-300 -z-10" />
                 {[0,1,2,3,4].map(i => <div key={i} className={`w-3 h-3 rounded-full border-2 transition-all duration-700 ${i===step?'bg-slate-700 border-slate-700 scale-150 shadow-lg':i<step?'bg-slate-400 border-transparent':'bg-white border-slate-200'}`} />)}
               </div>
-              <button onClick={() => step < 4 ? setStep(s => s+1) : onWin()} className="art-button">{step < 4 ? '同步认知' : '锁定现实'}</button>
+              <button onClick={() => { hapticFeedback(); step < 4 ? setStep(s => s+1) : onWin(); }} className="art-button">{step < 4 ? '同步认知' : '锁定现实'}</button>
             </div>
           );
         };
@@ -225,7 +248,8 @@
             setMv(v => v+1);
           };
           useEffect(() => {
-            const h = (e) => { if (['ArrowUp','w'].includes(e.key)) move(0,-1); if (['ArrowDown','s'].includes(e.key)) move(0,1); if (['ArrowLeft','a'].includes(e.key)) move(-1,0); if (['ArrowRight','d'].includes(e.key)) move(1,0); };
+            if (mPos.x === cPos.x && mPos.y === cPos.y) setTimeout(() => { setMPos({x:0, y:7}); setCPos({x:7,y:0}); setMv(0); }, 300);
+            const h = (e) => { if (['ArrowUp','w'].includes(e.key)) { hapticFeedback(); move(0,-1); } if (['ArrowDown','s'].includes(e.key)) { hapticFeedback(); move(0,1); } if (['ArrowLeft','a'].includes(e.key)) { hapticFeedback(); move(-1,0); } if (['ArrowRight','d'].includes(e.key)) { hapticFeedback(); move(1,0); } };
             window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
           }, [mPos, cPos, mv]);
           return (
@@ -254,6 +278,7 @@
           const [hazards, setHazards] = useState([]);
           const [status, setStatus] = useState('playing'); 
           const catPos = useRef({ x: 50, y: 50 });
+          const [displayPos, setDisplayPos] = useState({ x: 50, y: 50 });
           const requestRef = useRef();
 
           useEffect(() => {
@@ -275,6 +300,8 @@
               if (hit) { setScore(s => { const ns = s+1; if(ns>=10) setStatus('win'); return ns; }); return p.filter(m => m.id !== hit.id); }
               return p;
             });
+            // 同步渲染位置，确保猫咪在手机端“现身”
+            setDisplayPos({ x: catPos.current.x, y: catPos.current.y });
             requestRef.current = requestAnimationFrame(loop);
           }, [status]);
 
@@ -291,7 +318,7 @@
             <div className="flex flex-col items-center justify-center min-h-screen px-6 py-6 fade-in relative">
               <div className="space-y-3 mb-6">
                   <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-orange-400 underline underline-offset-8">维度 03: 警长抓老鼠</div>
-                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">触摸/滑动操控警长 · 避开红色毒瓶</p>
+                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">触摸并滑动 · 观测光环将同步定位</p>
               </div>
               
               <div className="relative h-[480px] w-full max-w-[400px] md:h-[550px] md:w-[450px] bg-white rounded-[3.5rem] md:rounded-[5rem] shadow-2xl border border-slate-100 overflow-hidden cursor-none"
@@ -306,7 +333,13 @@
                       </svg>
                     </div>
                 ))}
-                <div className="absolute pointer-events-none" style={{ left: `${catPos.current.x}%`, top: `${catPos.current.y}%`, transform: 'translate(-50%, -50%)' }}><CatEntity className="w-22 h-auto md:w-28" pose="mop" /></div>
+
+                {/* 警长猫与其观测光环 - 确保在移动端清晰可见 */}
+                <div className="absolute pointer-events-none transition-transform duration-100" style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
+                  <div className="observation-halo" style={{ filter: 'url(#handDrawnLine)' }} />
+                  <CatEntity className="w-22 h-auto md:w-28 relative z-10 filter drop-shadow(0 10px 15px rgba(0,0,0,0.1))" pose="mop" />
+                </div>
+
                 <div className="absolute top-8 left-8 text-[12px] md:text-[14px] font-bold text-slate-300 tracking-[0.5em]">CAPTURED: {score}/10</div>
                 
                 {status !== 'playing' && (
@@ -315,7 +348,7 @@
                       <h2 className="text-3xl md:text-4xl font-light text-slate-900 mb-6 italic uppercase">{status==='win'?'观测成功':'实验碎裂'}</h2>
                       <p className="text-slate-500 text-[11px] md:text-[13px] font-medium tracking-widest uppercase">{status==='win'?'样本已全部锁定。':'警长触碰了高频毒瓶。'}</p>
                     </div>
-                    <button onClick={status==='win'?onWin:() => {setScore(0); setHazards([]); setTargets([]); setStatus('playing');}} className="art-button">{status==='win'?'维度 04':'重新校准'}</button>
+                    <button onClick={() => { hapticFeedback(); status==='win'?onWin():(setScore(0),setHazards([]),setStatus('playing')); }} className="art-button">{status==='win'?'维度 04':'重新校准'}</button>
                   </div>
                 )}
               </div>
@@ -342,7 +375,7 @@
             if ((fM.x === targetM.x && fM.y === targetM.y && fC.x === targetC.x && fC.y === targetC.y) || (fM.x === targetC.x && fM.y === targetC.y && fC.x === targetM.x && fC.y === targetM.y)) onWin();
           };
           useEffect(() => {
-            const h = (e) => { if (['ArrowUp','w'].includes(e.key)) move(0,-1); if (['ArrowDown','s'].includes(e.key)) move(0,1); if (['ArrowLeft','a'].includes(e.key)) move(-1,0); if (['ArrowRight','d'].includes(e.key)) move(1,0); };
+            const h = (e) => { if (['ArrowUp','w'].includes(e.key)) { hapticFeedback(); move(0,-1); } if (['ArrowDown','s'].includes(e.key)) { hapticFeedback(); move(0,1); } if (['ArrowLeft','a'].includes(e.key)) { hapticFeedback(); move(-1,0); } if (['ArrowRight','d'].includes(e.key)) { hapticFeedback(); move(1,0); } };
             window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
           }, [mPos, cPos]);
           return (
@@ -400,8 +433,8 @@
                   </div>
                 </div>
                 <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-                    <button onClick={onRestart} className="art-button w-full md:w-auto">重新启动</button>
-                    <button onClick={onPrev} className="art-button-secondary w-full md:w-auto">重返上一关</button>
+                    <button onClick={() => { hapticFeedback(); onRestart(); }} className="art-button w-full md:w-auto">重新启动</button>
+                    <button onClick={() => { hapticFeedback(); onPrev(); }} className="art-button-secondary w-full md:w-auto">重返上一关</button>
                 </div>
               </div>
               <p className="text-slate-400 text-[12px] md:text-[13px] leading-loose px-6 font-light italic text-center max-w-xl">
