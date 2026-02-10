@@ -31,25 +31,34 @@
         .quantum-wobble { animation: wobble 8s ease-in-out infinite; }
         @keyframes wobble { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-10px, -15px) rotate(1.2deg); } }
         
-        /* 增强反馈的按钮 */
+        /* 增强反馈的按钮：具有物理下陷感 */
         .art-button {
           background: #3D3D3D; color: #FDFCF8; padding: 1rem 3rem; border-radius: 10px;
-          font-weight: 500; letter-spacing: 0.4em; border: 2px solid #1A1A1A;
-          transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+          font-weight: 500; letter-spacing: 0.4em; border: 2.5px solid #1A1A1A;
+          box-shadow: 0 5px 0 #1A1A1A;
+          transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
           filter: url(#handDrawnLine);
           font-size: 14px;
         }
         @media (min-width: 768px) { .art-button { padding: 1.2rem 4rem; font-size: 16px; } }
-        .art-button:hover { background: #1A1A1A; transform: translateY(-3px); }
-        .art-button:active { transform: scale(0.9) translateY(0); background: #000; }
+        .art-button:active { 
+            transform: translateY(4px); 
+            box-shadow: 0 1px 0 #1A1A1A;
+            background: #000;
+        }
         
         .art-button-secondary {
           background: transparent; color: #3D3D3D; padding: 0.8rem 2rem; border-radius: 10px;
           font-weight: 500; letter-spacing: 0.2em; border: 1.5px solid #3D3D3D;
-          transition: all 0.2s; filter: url(#handDrawnLine);
+          box-shadow: 0 4px 0 #3D3D3D;
+          transition: all 0.1s; filter: url(#handDrawnLine);
           font-size: 13px;
         }
-        .art-button-secondary:active { transform: scale(0.9); background: #3D3D3D; color: white; }
+        .art-button-secondary:active { 
+            transform: translateY(3px); 
+            box-shadow: 0 1px 0 #3D3D3D;
+            background: #F0EDE6;
+        }
 
         .obstacle-red-double {
             position: absolute; width: 34px; height: 34px; 
@@ -59,14 +68,15 @@
         }
         .obstacle-red-double::after { content: ''; width: 14px; height: 14px; border: 1.5px solid #D66B6B; border-radius: 50%; }
 
-        /* 强化版的观测光环 - 放在角色下方 */
-        .observation-halo {
-            position: absolute; width: 90px; height: 90px;
-            border: 1.5px dashed #D1CEC7; border-radius: 50%;
-            opacity: 0.4; animation: halo-rotate 12s linear infinite;
-            z-index: 0;
+        /* 第三关专属：警长重影动效 */
+        .cat-ghost-glow {
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.1));
+            animation: cat-pulse 2s infinite ease-in-out;
         }
-        @keyframes halo-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes cat-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.9; }
+        }
 
         .target-blue-ring {
             position: absolute; width: 50px; height: 50px; 
@@ -126,7 +136,7 @@
           </svg>
         );
 
-        // --- 1:1 手绘鼠鼠 (几何圆润态，左黑右红) ---
+        // --- 1:1 手绘鼠鼠 (几何圆润态) ---
         const MouseEntity = ({ className, style, highSaturation = true, holdingController = false }) => (
           <svg viewBox="0 0 100 100" className={`${className} ${highSaturation ? '' : 'grayscale opacity-60'}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M75 60 C 90 65, 100 50, 95 35 C 90 20, 75 25, 70 35" stroke="#E6A6B3" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 4" />
@@ -169,7 +179,7 @@
         );
 
         const DPad = ({ onMove }) => (
-          <div className="flex flex-col items-center gap-2 mt-8 lg:hidden">
+          <div className="flex flex-col items-center gap-2 mt-10 md:mt-12 lg:hidden">
             <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(0, -1); }} className="dpad-btn">↑</button>
             <div className="flex gap-14">
               <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(-1, 0); }} className="dpad-btn">←</button>
@@ -284,6 +294,7 @@
           const [targets, setTargets] = useState([]);
           const [hazards, setHazards] = useState([]);
           const [status, setStatus] = useState('playing'); 
+          const [isTouching, setIsTouching] = useState(false);
           const catPos = useRef({ x: 50, y: 50 });
           const [displayPos, setDisplayPos] = useState({ x: 50, y: 50 });
           const requestRef = useRef();
@@ -307,7 +318,6 @@
               if (hit) { setScore(s => { const ns = s+1; if(ns>=10) setStatus('win'); return ns; }); return p.filter(m => m.id !== hit.id); }
               return p;
             });
-            // 手机端关键修复：确保警长位置每帧实时同步渲染
             setDisplayPos({ x: catPos.current.x, y: catPos.current.y });
             requestRef.current = requestAnimationFrame(loop);
           }, [status]);
@@ -316,6 +326,7 @@
 
           const handleControl = (e) => {
               if(status!=='playing') return;
+              setIsTouching(true);
               const moveEvent = e.touches ? e.touches[0] : e;
               const r = e.currentTarget.getBoundingClientRect();
               catPos.current = { x:(moveEvent.clientX-r.left)/r.width*100, y:(moveEvent.clientY-r.top)/r.height*100 };
@@ -325,17 +336,15 @@
             <div className="flex flex-col items-center justify-center min-h-screen px-6 py-6 fade-in relative">
               <div className="space-y-3 mb-6">
                   <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-orange-400 underline underline-offset-8">维度 03: 警长抓老鼠</div>
-                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">触摸并滑动 · 警长正全力出击</p>
+                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">黑猫警长已锁定 · 避开高频毒瓶</p>
               </div>
               
               <div className="relative h-[480px] w-full max-w-[400px] md:h-[550px] md:w-[450px] bg-white rounded-[3.5rem] md:rounded-[5rem] shadow-2xl border border-slate-100 overflow-hidden cursor-none z-10"
-                   onMouseMove={handleControl} onTouchMove={handleControl} onTouchStart={handleControl}>
+                   onMouseMove={handleControl} onTouchMove={handleControl} onTouchStart={handleControl} onTouchEnd={() => setIsTouching(false)}>
                 <div className="absolute inset-0 opacity-10" style={{ background: 'url(#pencilTexture)' }} />
                 
-                {/* 目标样本 */}
                 {targets.map(m => <div key={m.id} className="absolute animate-pulse" style={{ left: `${m.x}%`, top: `${m.y}%`, transform: 'translate(-50%, -50%)' }}><MouseEntity className="w-12 md:w-16 h-auto" /></div>)}
                 
-                {/* 物理干扰 */}
                 {hazards.map(h => (
                     <div key={h.id} className="absolute" style={{ left: `${h.x}%`, top: `${h.y}%`, transform: 'translate(-50%, -50%)' }}>
                       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D66B6B" strokeWidth="2" style={{ filter: 'url(#handDrawnLine)' }}>
@@ -345,10 +354,12 @@
                     </div>
                 ))}
 
-                {/* 核心现身：黑猫警长及其定位光环 */}
-                <div className="absolute pointer-events-none z-[50]" style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
-                  <div className="observation-halo" style={{ filter: 'url(#handDrawnLine)', top: '10px', left: '10px' }} />
-                  <CatEntity className="w-24 h-auto md:w-32 relative z-[60] filter drop-shadow(0 15px 20px rgba(0,0,0,0.15))" pose="mop" />
+                {/* 黑猫警长现身：带动态重影反馈 */}
+                <div className={`absolute pointer-events-none z-[60] transition-transform duration-150 ${isTouching ? 'scale-110' : 'scale-100'}`} 
+                     style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
+                  {/* 量子重影（观测光环进化版） */}
+                  <div className="absolute inset-0 -m-4 border-2 border-slate-300 rounded-full opacity-20 cat-ghost-glow" style={{ filter: 'url(#handDrawnLine)' }} />
+                  <CatEntity className="w-24 h-auto md:w-32 filter drop-shadow(0 15px 30px rgba(0,0,0,0.15))" pose="mop" />
                 </div>
 
                 <div className="absolute top-8 left-8 text-[12px] md:text-[14px] font-bold text-slate-300 tracking-[0.5em]">CAPTURED: {score}/10</div>
