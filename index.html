@@ -25,13 +25,13 @@
           background-size: 60px 60px;
         }
 
-        .fade-in { animation: fadeIn 1.2s ease-out forwards; }
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
         .quantum-wobble { animation: wobble 8s ease-in-out infinite; }
         @keyframes wobble { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-10px, -15px) rotate(1.2deg); } }
         
-        /* 增强反馈的按钮：具有物理下压感 */
+        /* 增强反馈的按钮：具有物理下陷感 */
         .art-button {
           background: #3D3D3D; color: #FDFCF8; padding: 1rem 3rem; border-radius: 10px;
           font-weight: 500; letter-spacing: 0.4em; border: 2px solid #1A1A1A;
@@ -429,7 +429,6 @@
 
           return (
             <div className="flex flex-col items-center justify-center min-h-screen px-6 py-10 fade-in overflow-auto">
-              {/* 新增：玩法文字提示 */}
               <div className="space-y-3 mb-6 text-center">
                   <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-purple-600 underline underline-offset-8">维度 04：纠缠镜像同步</div>
                   <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase max-w-xs mx-auto">
@@ -514,16 +513,18 @@
 
           const startLevel = (next) => {
             setTransitioning(true);
+            // 提速：将延迟从 700ms 降低至 250ms
             setTimeout(() => { 
                 if (next === 2) setStartTime(Date.now());
                 if (next === 5) setTotalTime((Date.now() - startTime) / 1000);
                 setLevel(next); 
                 setTransitioning(false); 
-            }, 700);
+            }, 250);
           };
 
           return (
-            <div className={`min-h-screen bg-[#FDFCF8] transition-all duration-1000 ${transitioning ? 'opacity-0 blur-xl scale-95' : 'opacity-100'}`}>
+            /* 提速：将 duration-1000 缩短为 duration-400, 模糊从 blur-xl 降为 blur-md */
+            <div className={`min-h-screen bg-[#FDFCF8] transition-all duration-400 ${transitioning ? 'opacity-0 blur-md scale-[0.98]' : 'opacity-100'}`}>
               <ArtFilters />
               {level === 0 && <StartPage onStart={() => startLevel(1)} />}
               {level === 1 && <LevelObserver onWin={() => startLevel(2)} />}
