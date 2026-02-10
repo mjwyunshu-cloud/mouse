@@ -31,11 +31,11 @@
         .quantum-wobble { animation: wobble 8s ease-in-out infinite; }
         @keyframes wobble { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-10px, -15px) rotate(1.2deg); } }
         
-        /* 增强反馈的按钮：具有物理下陷感 */
+        /* 增强反馈的按钮：具有物理下压感 */
         .art-button {
           background: #3D3D3D; color: #FDFCF8; padding: 1rem 3rem; border-radius: 10px;
-          font-weight: 500; letter-spacing: 0.4em; border: 2.5px solid #1A1A1A;
-          box-shadow: 0 5px 0 #1A1A1A;
+          font-weight: 500; letter-spacing: 0.4em; border: 2px solid #1A1A1A;
+          box-shadow: 0 6px 0 #1A1A1A;
           transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
           filter: url(#handDrawnLine);
           font-size: 14px;
@@ -111,12 +111,12 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useCallback, useRef } = React;
+        const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
         // --- 触感辅助函数 ---
         const hapticFeedback = () => {
             if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(12); // 微弱量子震动
+                window.navigator.vibrate(15); // 量子触感增强
             }
         };
 
@@ -357,7 +357,6 @@
                 {/* 黑猫警长现身：带动态重影反馈 */}
                 <div className={`absolute pointer-events-none z-[60] transition-transform duration-150 ${isTouching ? 'scale-110' : 'scale-100'}`} 
                      style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
-                  {/* 量子重影（观测光环进化版） */}
                   <div className="absolute inset-0 -m-4 border-2 border-slate-300 rounded-full opacity-20 cat-ghost-glow" style={{ filter: 'url(#handDrawnLine)' }} />
                   <CatEntity className="w-24 h-auto md:w-32 filter drop-shadow(0 15px 30px rgba(0,0,0,0.15))" pose="mop" />
                 </div>
@@ -366,7 +365,7 @@
                 
                 {status !== 'playing' && (
                   <div className="absolute inset-0 z-[100] bg-[#FDFCF8]/95 backdrop-blur-md flex flex-col items-center justify-center text-center p-8 space-y-12">
-                    <div className="p-10 md:p-16 bg-white rounded-[3rem] md:rounded-[5rem] shadow-2xl border border-white max-w-xs" style={{ filter: 'url(#handDrawnLine)' }}>
+                    <div className="p-10 md:p-16 bg-white rounded-[3rem] md:rounded-[5rem] shadow-2xl border border-white max-xs" style={{ filter: 'url(#handDrawnLine)' }}>
                       <h2 className="text-3xl md:text-4xl font-light text-slate-900 mb-6 italic uppercase">{status==='win'?'观测成功':'实验碎裂'}</h2>
                       <p className="text-slate-500 text-[11px] md:text-[13px] font-medium tracking-widest uppercase">{status==='win'?'样本已全部锁定。':'警长触碰了高频毒瓶。'}</p>
                     </div>
@@ -378,45 +377,76 @@
           );
         };
 
+        // --- 4. 纠缠镜像同步 (新增：随机化设置) ---
         const LevelMirrorPuzzle = ({ onWin }) => {
           const size = 7;
           const [mPos, setMPos] = useState({ x: 1, y: 3 });
           const [cPos, setCPos] = useState({ x: 5, y: 3 });
-          const [mv, setMv] = useState(0);
-          const targetM = { x: 2, y: 1 }, targetC = { x: 4, y: 5 };
-          const blks = [{ x: 3, y: 3 }, { x: 1, y: 1 }, { x: 5, y: 5 }, { x: 3, y: 0 }, { x: 3, y: 6 }];
+          
+          // 随机生成关卡设置
+          const config = useMemo(() => {
+            const getRand = (exclude) => {
+               let x, y;
+               do {
+                 x = Math.floor(Math.random() * 7);
+                 y = Math.floor(Math.random() * 7);
+               } while (exclude.some(p => p.x === x && p.y === y));
+               return { x, y };
+            };
+
+            const startPos = [{x:1, y:3}, {x:5, y:3}];
+            const tm = getRand(startPos);
+            const tc = getRand([...startPos, tm]);
+            const obstacles = [];
+            for(let i=0; i<5; i++) {
+                obstacles.push(getRand([...startPos, tm, tc, ...obstacles]));
+            }
+            return { targetM: tm, targetC: tc, blks: obstacles };
+          }, []);
+
           const move = (dx, dy) => {
             const isW = (p) => p.x < 0 || p.x > 6 || p.y < 0 || p.y > 6;
-            const isB = (p) => blks.some(b => b.x === p.x && b.y === p.y);
+            const isB = (p) => config.blks.some(b => b.x === p.x && b.y === p.y);
             const nXm = mPos.x + dx, nYm = mPos.y + dy;
             const nXc = cPos.x - dx, nYc = cPos.y + dy;
             const fM = (isW({ x: nXm, y: nYm }) || isB({ x: nXm, y: nYm })) ? mPos : { x: nXm, y: nYm };
             const fC = (isW({ x: nXc, y: nYc }) || isB({ x: nXc, y: nYc })) ? cPos : { x: nXc, y: nYc };
             setMPos(fM); setCPos(fC);
-            setMv(v => v+1);
-            if ((fM.x === targetM.x && fM.y === targetM.y && fC.x === targetC.x && fC.y === targetC.y) || (fM.x === targetC.x && fM.y === targetC.y && fC.x === targetM.x && fC.y === targetM.y)) onWin();
+            
+            const success = (fM.x === config.targetM.x && fM.y === config.targetM.y && fC.x === config.targetC.x && fC.y === config.targetC.y) || 
+                          (fM.x === config.targetC.x && fM.y === config.targetC.y && fC.x === config.targetM.x && fC.y === config.targetM.y);
+            if (success) onWin();
           };
+
           useEffect(() => {
-            const h = (e) => { if (['ArrowUp','w'].includes(e.key)) { hapticFeedback(); move(0,-1); } if (['ArrowDown','s'].includes(e.key)) { hapticFeedback(); move(0,1); } if (['ArrowLeft','a'].includes(e.key)) { hapticFeedback(); move(-1,0); } if (['ArrowRight','d'].includes(e.key)) { hapticFeedback(); move(1,0); } };
+            const h = (e) => { 
+                if (['ArrowUp','w'].includes(e.key)) { hapticFeedback(); move(0,-1); } 
+                if (['ArrowDown','s'].includes(e.key)) { hapticFeedback(); move(0,1); } 
+                if (['ArrowLeft','a'].includes(e.key)) { hapticFeedback(); move(-1,0); } 
+                if (['ArrowRight','d'].includes(e.key)) { hapticFeedback(); move(1,0); } 
+            };
             window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
-          }, [mPos, cPos]);
+          }, [mPos, cPos, config]);
+
           return (
             <div className="flex flex-col items-center justify-center min-h-screen px-6 py-10 fade-in overflow-auto">
-              <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-purple-600 underline underline-offset-8 mb-8">维度 04：纠缠镜像同步</div>
+              <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-purple-600 underline underline-offset-8 mb-8 text-center">维度 04：纠缠镜像同步 (随机观测模式)</div>
               <div className="bg-white/50 p-4 md:p-12 rounded-[3rem] md:rounded-[5rem] shadow-2xl border-2 border-white relative scale-90 md:scale-95 origin-center">
                 <div className="grid grid-cols-7 border-t border-l border-slate-200 mosaic-grid-bg relative z-10">
                   {Array.from({ length: 49 }).map((_, i) => {
                     const x = i % 7, y = Math.floor(i / 7);
                     const isM = mPos.x === x && mPos.y === y;
                     const isC = cPos.x === x && cPos.y === y;
-                    const isTM = targetM.x === x && targetM.y === y;
-                    const isTC = targetC.x === x && targetC.y === y;
-                    const isB = blks.some(b => b.x === x && b.y === y);
+                    const isTM = config.targetM.x === x && config.targetM.y === y;
+                    const isTC = config.targetC.x === x && config.targetC.y === y;
+                    const isB = config.blks.some(b => b.x === x && b.y === b.y);
+                    // 修正 obstacle 碰撞显示逻辑
+                    const showB = config.blks.some(b => b.x === x && b.y === y);
                     return (
                       <div key={i} className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center relative border-r border-b border-slate-200">
                         {isTM && <div className="target-blue-ring scale-75 md:scale-100" />}
                         {isTC && <div className="target-blue-ring border-blue-400 scale-75 md:scale-100" />} 
-                        {isB && <div className="obstacle-red-double scale-75 md:scale-100" />}
+                        {showB && <div className="obstacle-red-double scale-75 md:scale-100" />}
                         {isM && <MouseEntity className="w-8 h-auto md:w-16 relative z-30 hand-drawn-shadow" />}
                         {isC && <CatEntity className="w-8 h-auto md:w-14 relative z-20" allBlack={true} pose="no-mop" />}
                       </div>
@@ -489,7 +519,7 @@
               {level === 1 && <LevelObserver onWin={() => startLevel(2)} />}
               {level === 2 && <LevelEscape onWin={() => startLevel(3)} />}
               {level === 3 && <LevelCapture onWin={() => startLevel(4)} />}
-              {level === 4 && <LevelMirrorPuzzle onWin={() => startLevel(5)} />}
+              {level === 4 && <LevelMirrorPuzzle key={Date.now()} onWin={() => startLevel(5)} />}
               {level === 5 && <Celebration totalTime={totalTime} onRestart={() => setLevel(0)} onPrev={() => setLevel(4)} />}
             </div>
           );
