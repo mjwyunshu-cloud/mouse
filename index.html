@@ -59,11 +59,12 @@
         }
         .obstacle-red-double::after { content: ''; width: 14px; height: 14px; border: 1.5px solid #D66B6B; border-radius: 50%; }
 
-        /* 强化版的观测光环 */
+        /* 强化版的观测光环 - 放在角色下方 */
         .observation-halo {
-            position: absolute; width: 80px; height: 80px;
-            border: 1px dashed #3D3D3D; border-radius: 50%;
-            opacity: 0.3; animation: halo-rotate 10s linear infinite;
+            position: absolute; width: 90px; height: 90px;
+            border: 1.5px dashed #D1CEC7; border-radius: 50%;
+            opacity: 0.4; animation: halo-rotate 12s linear infinite;
+            z-index: 0;
         }
         @keyframes halo-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -77,21 +78,22 @@
         .portal-spin { animation: p-spin 6s linear infinite; }
         @keyframes p-spin { from { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } to { transform: rotate(360deg) scale(1); } }
 
-        /* 手机端手绘方向键反馈增强 */
+        /* 手机端手绘方向键反馈增强：模拟物理按压感 */
         .dpad-btn {
-            width: 60px; height: 60px;
-            background: white; border: 2px solid #3D3D3D;
+            width: 64px; height: 64px;
+            background: white; border: 2.5px solid #3D3D3D;
             border-radius: 15px; display: flex; align-items: center; justify-content: center;
             filter: url(#handDrawnLine);
-            font-weight: bold; color: #3D3D3D; font-size: 20px;
-            box-shadow: 0 5px 0 #3D3D3D;
-            transition: all 0.1s;
+            font-weight: bold; color: #3D3D3D; font-size: 22px;
+            box-shadow: 0 6px 0 #3D3D3D;
+            transition: all 0.05s;
             -webkit-tap-highlight-color: transparent;
         }
         .dpad-btn:active { 
             transform: translateY(4px); 
-            box-shadow: 0 1px 0 #3D3D3D; 
-            background: #EAE8E4;
+            box-shadow: 0 2px 0 #3D3D3D; 
+            background: #D1CEC7;
+            color: black;
         }
     </style>
 </head>
@@ -104,7 +106,7 @@
         // --- 触感辅助函数 ---
         const hapticFeedback = () => {
             if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(10); // 微弱震动
+                window.navigator.vibrate(12); // 微弱量子震动
             }
         };
 
@@ -124,7 +126,7 @@
           </svg>
         );
 
-        // --- 1:1 手绘鼠鼠 ---
+        // --- 1:1 手绘鼠鼠 (几何圆润态，左黑右红) ---
         const MouseEntity = ({ className, style, highSaturation = true, holdingController = false }) => (
           <svg viewBox="0 0 100 100" className={`${className} ${highSaturation ? '' : 'grayscale opacity-60'}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M75 60 C 90 65, 100 50, 95 35 C 90 20, 75 25, 70 35" stroke="#E6A6B3" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 4" />
@@ -146,13 +148,13 @@
           </svg>
         );
 
-        // --- 1:1 手绘警长猫 ---
+        // --- 1:1 手绘黑猫警长 ---
         const CatEntity = ({ className, style, isGhost = false, allBlack = false, pose = 'mop' }) => (
           <svg viewBox="0 0 100 140" className={`${className} ${isGhost ? 'opacity-30 grayscale' : ''}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
             {pose === 'mop' && <rect x="88" y="5" width="4" height="125" rx="2" fill={allBlack ? "#000" : "#7A6F62"} />}
             {pose === 'mop' && <path d="M72 130 L 102 130 L 98 138 L 76 138 Z" fill={allBlack ? "#000" : "#D1CEC7"} stroke={allBlack ? "#000" : "#7A6F62"} strokeWidth="1" />}
             <path d="M12 120 Q 12 75, 45 75 Q 78 75, 78 120 L 78 130 Q 45 138, 12 130 Z" fill={allBlack ? "#000" : "#1A1A1A"} />
-            <path d="M12 120 Q 12 75, 45 75 Q 78 75, 78 120" fill="url(#pencilTexture)" opacity="0.25" />
+            <path d="M12 120 Q 12 75, 45 75 Q 78 75, 78 120" fill="url(#pencilTexture)" opacity={allBlack ? 0 : 0.25} />
             <path d="M22 95 Q 45 90, 68 95 L 68 115 Q 45 120, 22 115 Z" fill={allBlack ? "#000" : "#FFFFFF"} stroke="#EEE" strokeWidth="0.5" />
             <path d="M20 75 Q 20 42, 45 42 Q 70 42, 70 75 L 70 85 Q 45 92, 20 85 Z" fill={allBlack ? "#000" : "#1A1A1A"} />
             <path d="M25 45 L 12 18 L 40 42 Z" fill={allBlack ? "#000" : "#1A1A1A"} />
@@ -167,9 +169,9 @@
         );
 
         const DPad = ({ onMove }) => (
-          <div className="flex flex-col items-center gap-2 mt-10 md:mt-12 lg:hidden">
+          <div className="flex flex-col items-center gap-2 mt-8 lg:hidden">
             <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(0, -1); }} className="dpad-btn">↑</button>
-            <div className="flex gap-12">
+            <div className="flex gap-14">
               <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(-1, 0); }} className="dpad-btn">←</button>
               <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(1, 0); }} className="dpad-btn">→</button>
             </div>
@@ -249,7 +251,12 @@
           };
           useEffect(() => {
             if (mPos.x === cPos.x && mPos.y === cPos.y) setTimeout(() => { setMPos({x:0, y:7}); setCPos({x:7,y:0}); setMv(0); }, 300);
-            const h = (e) => { if (['ArrowUp','w'].includes(e.key)) { hapticFeedback(); move(0,-1); } if (['ArrowDown','s'].includes(e.key)) { hapticFeedback(); move(0,1); } if (['ArrowLeft','a'].includes(e.key)) { hapticFeedback(); move(-1,0); } if (['ArrowRight','d'].includes(e.key)) { hapticFeedback(); move(1,0); } };
+            const h = (e) => { 
+                if (['ArrowUp','w'].includes(e.key)) { hapticFeedback(); move(0,-1); } 
+                if (['ArrowDown','s'].includes(e.key)) { hapticFeedback(); move(0,1); } 
+                if (['ArrowLeft','a'].includes(e.key)) { hapticFeedback(); move(-1,0); } 
+                if (['ArrowRight','d'].includes(e.key)) { hapticFeedback(); move(1,0); } 
+            };
             window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
           }, [mPos, cPos, mv]);
           return (
@@ -300,7 +307,7 @@
               if (hit) { setScore(s => { const ns = s+1; if(ns>=10) setStatus('win'); return ns; }); return p.filter(m => m.id !== hit.id); }
               return p;
             });
-            // 同步渲染位置，确保猫咪在手机端“现身”
+            // 手机端关键修复：确保警长位置每帧实时同步渲染
             setDisplayPos({ x: catPos.current.x, y: catPos.current.y });
             requestRef.current = requestAnimationFrame(loop);
           }, [status]);
@@ -318,26 +325,30 @@
             <div className="flex flex-col items-center justify-center min-h-screen px-6 py-6 fade-in relative">
               <div className="space-y-3 mb-6">
                   <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-orange-400 underline underline-offset-8">维度 03: 警长抓老鼠</div>
-                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">触摸并滑动 · 观测光环将同步定位</p>
+                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">触摸并滑动 · 警长正全力出击</p>
               </div>
               
-              <div className="relative h-[480px] w-full max-w-[400px] md:h-[550px] md:w-[450px] bg-white rounded-[3.5rem] md:rounded-[5rem] shadow-2xl border border-slate-100 overflow-hidden cursor-none"
+              <div className="relative h-[480px] w-full max-w-[400px] md:h-[550px] md:w-[450px] bg-white rounded-[3.5rem] md:rounded-[5rem] shadow-2xl border border-slate-100 overflow-hidden cursor-none z-10"
                    onMouseMove={handleControl} onTouchMove={handleControl} onTouchStart={handleControl}>
                 <div className="absolute inset-0 opacity-10" style={{ background: 'url(#pencilTexture)' }} />
+                
+                {/* 目标样本 */}
                 {targets.map(m => <div key={m.id} className="absolute animate-pulse" style={{ left: `${m.x}%`, top: `${m.y}%`, transform: 'translate(-50%, -50%)' }}><MouseEntity className="w-12 md:w-16 h-auto" /></div>)}
+                
+                {/* 物理干扰 */}
                 {hazards.map(h => (
                     <div key={h.id} className="absolute" style={{ left: `${h.x}%`, top: `${h.y}%`, transform: 'translate(-50%, -50%)' }}>
-                      <svg width="34" height="34" md-width="42" viewBox="0 0 24 24" fill="none" stroke="#D66B6B" strokeWidth="2" style={{ filter: 'url(#handDrawnLine)' }}>
+                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D66B6B" strokeWidth="2" style={{ filter: 'url(#handDrawnLine)' }}>
                         <path d="M10 2v8L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45L14 10V2" />
                         <path d="M8.5 2h7" strokeDasharray="2 2" />
                       </svg>
                     </div>
                 ))}
 
-                {/* 警长猫与其观测光环 - 确保在移动端清晰可见 */}
-                <div className="absolute pointer-events-none transition-transform duration-100" style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
-                  <div className="observation-halo" style={{ filter: 'url(#handDrawnLine)' }} />
-                  <CatEntity className="w-22 h-auto md:w-28 relative z-10 filter drop-shadow(0 10px 15px rgba(0,0,0,0.1))" pose="mop" />
+                {/* 核心现身：黑猫警长及其定位光环 */}
+                <div className="absolute pointer-events-none z-[50]" style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
+                  <div className="observation-halo" style={{ filter: 'url(#handDrawnLine)', top: '10px', left: '10px' }} />
+                  <CatEntity className="w-24 h-auto md:w-32 relative z-[60] filter drop-shadow(0 15px 20px rgba(0,0,0,0.15))" pose="mop" />
                 </div>
 
                 <div className="absolute top-8 left-8 text-[12px] md:text-[14px] font-bold text-slate-300 tracking-[0.5em]">CAPTURED: {score}/10</div>
