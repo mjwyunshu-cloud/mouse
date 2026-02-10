@@ -88,7 +88,7 @@
         .portal-spin { animation: p-spin 6s linear infinite; }
         @keyframes p-spin { from { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } to { transform: rotate(360deg) scale(1); } }
 
-        /* 手机端手绘方向键反馈增强：模拟物理按压感 */
+        /* 手机端手绘方向键 */
         .dpad-btn {
             width: 64px; height: 64px;
             background: white; border: 2.5px solid #3D3D3D;
@@ -354,7 +354,7 @@
                     </div>
                 ))}
 
-                {/* 黑猫警长现身：带动态重影反馈 */}
+                {/* 警长现身：带动态重影反馈 */}
                 <div className={`absolute pointer-events-none z-[60] transition-transform duration-150 ${isTouching ? 'scale-110' : 'scale-100'}`} 
                      style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
                   <div className="absolute inset-0 -m-4 border-2 border-slate-300 rounded-full opacity-20 cat-ghost-glow" style={{ filter: 'url(#handDrawnLine)' }} />
@@ -377,13 +377,12 @@
           );
         };
 
-        // --- 4. 纠缠镜像同步 (新增：随机化设置) ---
+        // --- 4. 纠缠镜像同步 ---
         const LevelMirrorPuzzle = ({ onWin }) => {
           const size = 7;
           const [mPos, setMPos] = useState({ x: 1, y: 3 });
           const [cPos, setCPos] = useState({ x: 5, y: 3 });
           
-          // 随机生成关卡设置
           const config = useMemo(() => {
             const getRand = (exclude) => {
                let x, y;
@@ -439,8 +438,6 @@
                     const isC = cPos.x === x && cPos.y === y;
                     const isTM = config.targetM.x === x && config.targetM.y === y;
                     const isTC = config.targetC.x === x && config.targetC.y === y;
-                    const isB = config.blks.some(b => b.x === x && b.y === b.y);
-                    // 修正 obstacle 碰撞显示逻辑
                     const showB = config.blks.some(b => b.x === x && b.y === y);
                     return (
                       <div key={i} className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center relative border-r border-b border-slate-200">
@@ -459,38 +456,45 @@
           );
         };
 
+        // --- 5. 庆祝结局 (优化布局与字号) ---
         const Celebration = ({ totalTime, onRestart, onPrev }) => {
           const score = Math.max(1000, Math.floor(10000 - totalTime * 20));
           const timeFormatted = totalTime.toFixed(1);
           return (
-            <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center space-y-16 fade-in pb-20">
-              <div className="relative flex justify-center items-end gap-12 md:gap-24 scale-75 md:scale-100">
-                <div className="absolute inset-0 bg-blue-50/20 rounded-full blur-[100px] md:blur-[180px] scale-150" />
-                <MouseEntity className="w-48 md:w-64 h-auto brightness-110 hand-drawn-shadow" holdingController={true} />
-                <CatEntity className="w-32 md:w-48 h-auto opacity-80" pose="no-mop" />
+            <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center space-y-6 md:space-y-12 fade-in pt-4 pb-8 overflow-y-auto">
+              <div className="relative flex justify-center items-end gap-8 md:gap-16 scale-75 md:scale-100">
+                <div className="absolute inset-0 bg-blue-50/20 rounded-full blur-[80px] md:blur-[180px] scale-150" />
+                <MouseEntity className="w-36 md:w-56 h-auto brightness-110 hand-drawn-shadow" holdingController={true} />
+                <CatEntity className="w-24 md:w-44 h-auto opacity-80" pose="no-mop" />
               </div>
-              <div className="space-y-10">
-                <div className="space-y-4">
-                  <h1 className="text-[60px] md:text-[90px] font-light tracking-tighter text-[#3D3D3D] italic uppercase leading-none" style={{ filter: 'url(#handDrawnLine)' }}>纠缠圆满</h1>
-                  <div className="flex flex-col md:flex-row gap-6 md:gap-10 justify-center items-center py-6">
+              
+              <div className="space-y-6 md:space-y-10">
+                <div className="space-y-2 md:space-y-4">
+                  <h1 className="text-[32px] md:text-[54px] font-bold tracking-tight text-[#3D3D3D] italic uppercase leading-tight" style={{ filter: 'url(#handDrawnLine)' }}>鼠鼠猫猫赢啦！</h1>
+                  <p className="text-slate-400 text-[11px] md:text-[14px] font-bold tracking-[0.5em] uppercase">Observation Mastered</p>
+                  
+                  {/* 积分展示区 - 缩小 padding 以节省空间 */}
+                  <div className="flex gap-6 md:gap-10 justify-center items-center py-4">
                         <div className="text-center">
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Time</p>
-                            <p className="text-3xl font-light italic text-slate-800">{timeFormatted}s</p>
+                            <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-1">Time</p>
+                            <p className="text-2xl md:text-3xl font-light italic text-slate-800">{timeFormatted}s</p>
                         </div>
-                        <div className="w-[1px] h-10 bg-slate-200 hidden md:block" />
+                        <div className="w-[1px] h-8 bg-slate-200" />
                         <div className="text-center">
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Quantum Score</p>
-                            <p className="text-3xl font-light italic text-blue-600">{score}</p>
+                            <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-1">Score</p>
+                            <p className="text-2xl md:text-3xl font-light italic text-blue-600">{score}</p>
                         </div>
                   </div>
                 </div>
-                <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-                    <button onClick={() => { hapticFeedback(); onRestart(); }} className="art-button w-full md:w-auto">重新启动</button>
-                    <button onClick={() => { hapticFeedback(); onPrev(); }} className="art-button-secondary w-full md:w-auto">重返上一关</button>
+
+                <div className="flex flex-col gap-3 justify-center items-center">
+                    <button onClick={() => { hapticFeedback(); onPrev(); }} className="art-button-secondary w-full max-w-[240px]">重返上一关</button>
+                    <button onClick={() => { hapticFeedback(); onRestart(); }} className="art-button w-full max-w-[240px]">重启观测实验</button>
                 </div>
               </div>
-              <p className="text-slate-400 text-[12px] md:text-[13px] leading-loose px-6 font-light italic text-center max-w-xl">
-                “这不是某一方的获胜，而是他们一起赢得了这场共振中的和谐解。”
+              
+              <p className="text-slate-400 text-[10px] md:text-[12px] leading-relaxed px-4 font-light italic text-center max-w-sm">
+                “这不是某一方的获胜，而是他们一起赢得了这场量子共振里的和谐解。”
               </p>
             </div>
           );
