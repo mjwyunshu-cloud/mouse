@@ -31,7 +31,7 @@
         .quantum-wobble { animation: wobble 8s ease-in-out infinite; }
         @keyframes wobble { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-10px, -15px) rotate(1.2deg); } }
         
-        /* 增强反馈的按钮：具有物理下陷感 */
+        /* 增强反馈的按钮：具有物理下压感 */
         .art-button {
           background: #3D3D3D; color: #FDFCF8; padding: 1rem 3rem; border-radius: 10px;
           font-weight: 500; letter-spacing: 0.4em; border: 2px solid #1A1A1A;
@@ -88,7 +88,7 @@
         .portal-spin { animation: p-spin 6s linear infinite; }
         @keyframes p-spin { from { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } to { transform: rotate(360deg) scale(1); } }
 
-        /* 手机端手绘方向键 */
+        /* 手机端手绘方向键反馈增强 */
         .dpad-btn {
             width: 64px; height: 64px;
             background: white; border: 2.5px solid #3D3D3D;
@@ -105,6 +105,15 @@
             background: #D1CEC7;
             color: black;
         }
+
+        /* 碎片动效 */
+        .bit-glow {
+            animation: bit-float 2s infinite ease-in-out;
+        }
+        @keyframes bit-float {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+            50% { transform: translateY(-5px) scale(1.2); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -116,7 +125,7 @@
         // --- 触感辅助函数 ---
         const hapticFeedback = () => {
             if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(15); // 量子触感增强
+                window.navigator.vibrate(15); 
             }
         };
 
@@ -136,7 +145,7 @@
           </svg>
         );
 
-        // --- 1:1 手绘鼠鼠 (几何圆润态) ---
+        // --- 1:1 手绘鼠鼠 ---
         const MouseEntity = ({ className, style, highSaturation = true, holdingController = false }) => (
           <svg viewBox="0 0 100 100" className={`${className} ${highSaturation ? '' : 'grayscale opacity-60'}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M75 60 C 90 65, 100 50, 95 35 C 90 20, 75 25, 70 35" stroke="#E6A6B3" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 4" />
@@ -207,12 +216,12 @@
               
               <div className="relative w-full max-w-sm aspect-square flex items-center justify-center scale-90 md:scale-100">
                 <div className="absolute transition-transform duration-700 ease-out z-10" style={{ transform: `translate(${mousePos.x * -2.5}px, ${mousePos.y * -2.5}px)`, left: '10%', top: '20%' }}>
-                  <div className="opacity-20 grayscale scale-75 rotate-[-12deg] quantum-wobble"><CatEntity className="w-32 md:w-44 h-auto" /></div>
+                  <div className="opacity-70 grayscale scale-75 rotate-[-12deg] quantum-wobble"><CatEntity className="w-32 md:w-44 h-auto" /></div>
                 </div>
                 <div className="relative z-20 transition-transform duration-200 ease-out" style={{ transform: `translate(${mousePos.x * 1}px, ${mousePos.y * 1}px)` }}>
-                  <div className="w-64 h-64 md:w-80 md:h-80 rounded-[4rem] md:rounded-[5rem] bg-white/40 backdrop-blur-md border-2 border-white/50 shadow-xl flex items-center justify-center relative">
-                     <MouseEntity className="w-48 h-auto md:w-64 filter drop-shadow(0 20px 40px rgba(0,0,0,0.06))" holdingController={true} />
-                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-[#3D3D3D] text-[#FDFCF8] text-[9px] md:text-[10px] font-black tracking-[0.5em] rounded-xl shadow-2xl uppercase">The Observer</div>
+                  <div className="w-56 h-56 md:w-64 md:h-64 rounded-[4rem] bg-white/40 backdrop-blur-md border-2 border-white/50 shadow-xl flex items-center justify-center relative">
+                     <MouseEntity className="w-36 h-auto md:w-44 filter drop-shadow(0 20px 40px rgba(0,0,0,0.06))" holdingController={true} />
+                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-[#3D3D3D] text-[#FDFCF8] text-[8px] md:text-[9px] font-black tracking-[0.5em] rounded-xl shadow-2xl uppercase">The Observer</div>
                   </div>
                 </div>
               </div>
@@ -243,43 +252,103 @@
           );
         };
 
+        // --- 2. 第二关：深化版绝地逃亡 (碎片收集 + 规则提示) ---
         const LevelEscape = ({ onWin }) => {
+          const size = 8;
           const [mPos, setMPos] = useState({ x: 0, y: 7 });
           const [cPos, setCPos] = useState({ x: 7, y: 0 });
           const [mv, setMv] = useState(0);
           const exit = { x: 7, y: 0 };
+          
+          const levelConfig = useMemo(() => {
+            const forbidden = [{x:0,y:7}, {x:7,y:0}, {x:7,y:1}, {x:6,y:0}, {x:1,y:7}];
+            const getRand = (count, exclude) => {
+              const res = [];
+              while(res.length < count) {
+                const p = { x: Math.floor(Math.random()*size), y: Math.floor(Math.random()*size) };
+                if(!exclude.some(e => e.x===p.x && e.y===p.y) && !res.some(e => e.x===p.x && e.y===p.y)) res.push(p);
+              }
+              return res;
+            };
+            const obs = getRand(6, forbidden);
+            const bits = getRand(3, [...forbidden, ...obs]);
+            return { obstacles: obs, bits };
+          }, []);
+
+          const [bits, setBits] = useState(levelConfig.bits);
+          const collected = 3 - bits.length;
+
           const move = (dx, dy) => {
             const nx = mPos.x + dx, ny = mPos.y + dy;
-            if (nx<0 || nx>7 || ny<0 || ny>7) return;
+            if (nx<0 || nx>=size || ny<0 || ny>=size) return;
+            if (levelConfig.obstacles.some(o => o.x===nx && o.y===ny)) return;
+
             setMPos({ x: nx, y: ny });
-            if (nx === exit.x && ny === exit.y) onWin();
+
+            if (bits.some(b => b.x===nx && b.y===ny)) {
+                hapticFeedback();
+                setBits(prev => prev.filter(b => b.x!==nx || b.y!==ny));
+            }
+
+            if (nx === exit.x && ny === exit.y && bits.length === 0) {
+                onWin();
+                return;
+            }
+            
             if ((mv + 1) % 2 === 0) {
               const dX = nx - cPos.x, dY = ny - cPos.y;
               setCPos(p => ({ x: p.x + (Math.abs(dX) > Math.abs(dY) ? Math.sign(dX) : 0), y: p.y + (Math.abs(dY) >= Math.abs(dX) ? Math.sign(dY) : 0) }));
             }
             setMv(v => v+1);
           };
+
           useEffect(() => {
-            if (mPos.x === cPos.x && mPos.y === cPos.y) setTimeout(() => { setMPos({x:0, y:7}); setCPos({x:7,y:0}); setMv(0); }, 300);
+            if (mPos.x === cPos.x && mPos.y === cPos.y) {
+                setTimeout(() => { setMPos({x:0, y:7}); setCPos({x:7,y:0}); setMv(0); }, 300);
+            }
             const h = (e) => { 
-                if (['ArrowUp','w'].includes(e.key)) { hapticFeedback(); move(0,-1); } 
-                if (['ArrowDown','s'].includes(e.key)) { hapticFeedback(); move(0,1); } 
-                if (['ArrowLeft','a'].includes(e.key)) { hapticFeedback(); move(-1,0); } 
-                if (['ArrowRight','d'].includes(e.key)) { hapticFeedback(); move(1,0); } 
+                if (['ArrowUp','w'].includes(e.key)) move(0,-1); 
+                if (['ArrowDown','s'].includes(e.key)) move(0,1); 
+                if (['ArrowLeft','a'].includes(e.key)) move(-1,0); 
+                if (['ArrowRight','d'].includes(e.key)) move(1,0); 
             };
             window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
-          }, [mPos, cPos, mv]);
+          }, [mPos, cPos, mv, bits]);
+
           return (
             <div className="flex flex-col items-center justify-center min-h-screen px-6 py-10 fade-in overflow-auto">
-              <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.6em] text-[#D66B6B] underline underline-offset-8 mb-8">维度 02: 绝地逃亡</div>
+              <div className="text-center space-y-4 mb-6">
+                <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.6em] text-[#D66B6B] underline underline-offset-8">维度 02: 深化逃亡</div>
+                <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase max-w-xs mx-auto">
+                    操控鼠鼠移动 · 收集 3 个蓝色观测碎片 · 激活并进入出口门户
+                </p>
+                <div className="text-[11px] font-black text-slate-800 tracking-[0.2em]">收集进度: {collected}/3</div>
+              </div>
+              
               <div className="bg-white/50 p-3 md:p-6 rounded-[2.5rem] md:rounded-[4rem] shadow-xl border border-white scale-90 md:scale-100 origin-center">
                 <div className="grid grid-cols-8 border border-slate-200">
                   {Array.from({ length: 64 }).map((_, i) => {
                     const x = i%8, y = Math.floor(i/8);
+                    const isM = mPos.x === x && mPos.y === y;
+                    const isC = cPos.x === x && cPos.y === y;
+                    const isObs = levelConfig.obstacles.some(o => o.x===x && o.y===y);
+                    const isBit = bits.some(b => b.x===x && b.y===y);
+                    const isEx = exit.x===x && exit.y===y;
+
                     return <div key={i} className="w-9 h-9 md:w-14 md:h-14 flex items-center justify-center relative border border-slate-50" style={{ background: (x+y)%2===0?'#F9F7F2':'#fff' }}>
-                      {exit.x===x && exit.y===y && <div className="absolute inset-1.5 bg-[#8FAADC]/20 rounded-full portal-spin border border-[#8FAADC]" />}
-                      {cPos.x===x && cPos.y===y && <CatEntity className="w-8 h-auto relative z-20" pose="mop" />}
-                      {mPos.x===x && mPos.y===y && <MouseEntity className="w-7 h-auto relative z-30" />}
+                      {isEx && (
+                        <div className={`absolute inset-1.5 rounded-full portal-spin border ${bits.length === 0 ? 'bg-[#8FAADC]/20 border-[#8FAADC]' : 'bg-slate-100 border-slate-200 opacity-40'}`} />
+                      )}
+                      {isObs && (
+                        <div className="w-2/3 h-2/3 border-2 border-slate-300 rotate-45 flex items-center justify-center opacity-30" style={{ filter: 'url(#handDrawnLine)' }}>
+                            <div className="w-full h-[1px] bg-slate-400"></div>
+                        </div>
+                      )}
+                      {isBit && (
+                        <div className="w-5 h-5 bg-blue-400 rounded-full bit-glow border-2 border-white shadow-sm" />
+                      )}
+                      {isC && <CatEntity className="w-8 h-auto relative z-20" pose="mop" />}
+                      {isM && <MouseEntity className="w-7 h-auto relative z-30" />}
                     </div>;
                   })}
                 </div>
@@ -336,7 +405,7 @@
             <div className="flex flex-col items-center justify-center min-h-screen px-6 py-6 fade-in relative">
               <div className="space-y-3 mb-6">
                   <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-orange-400 underline underline-offset-8">维度 03: 警长抓老鼠</div>
-                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">黑猫警长已锁定 · 避开高频毒瓶</p>
+                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">黑猫警长已锁定 · 避开高频毒瓶 · 抓捕10个样本</p>
               </div>
               
               <div className="relative h-[480px] w-full max-w-[400px] md:h-[550px] md:w-[450px] bg-white rounded-[3.5rem] md:rounded-[5rem] shadow-2xl border border-slate-100 overflow-hidden cursor-none z-10"
@@ -354,7 +423,6 @@
                     </div>
                 ))}
 
-                {/* 警长现身：带动态重影反馈 */}
                 <div className={`absolute pointer-events-none z-[60] transition-transform duration-150 ${isTouching ? 'scale-110' : 'scale-100'}`} 
                      style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
                   <div className="absolute inset-0 -m-4 border-2 border-slate-300 rounded-full opacity-20 cat-ghost-glow" style={{ filter: 'url(#handDrawnLine)' }} />
@@ -377,7 +445,6 @@
           );
         };
 
-        // --- 4. 纠缠镜像同步 ---
         const LevelMirrorPuzzle = ({ onWin }) => {
           const size = 7;
           const [mPos, setMPos] = useState({ x: 1, y: 3 });
@@ -392,7 +459,6 @@
                } while (exclude.some(p => p.x === x && p.y === y));
                return { x, y };
             };
-
             const startPos = [{x:1, y:3}, {x:5, y:3}];
             const tm = getRand(startPos);
             const tc = getRand([...startPos, tm]);
@@ -411,10 +477,8 @@
             const fM = (isW({ x: nXm, y: nYm }) || isB({ x: nXm, y: nYm })) ? mPos : { x: nXm, y: nYm };
             const fC = (isW({ x: nXc, y: nYc }) || isB({ x: nXc, y: nYc })) ? cPos : { x: nXc, y: nYc };
             setMPos(fM); setCPos(fC);
-            
-            const success = (fM.x === config.targetM.x && fM.y === config.targetM.y && fC.x === config.targetC.x && fC.y === config.targetC.y) || 
-                          (fM.x === config.targetC.x && fM.y === config.targetC.y && fC.x === config.targetM.x && fC.y === config.targetM.y);
-            if (success) onWin();
+            if ((fM.x === config.targetM.x && fM.y === config.targetM.y && fC.x === config.targetC.x && fC.y === config.targetC.y) || 
+                (fM.x === config.targetC.x && fM.y === config.targetC.y && fC.x === config.targetM.x && fC.y === config.targetM.y)) onWin();
           };
 
           useEffect(() => {
@@ -462,7 +526,6 @@
           );
         };
 
-        // --- 5. 庆祝结局 ---
         const Celebration = ({ totalTime, onRestart, onPrev }) => {
           const score = Math.max(1000, Math.floor(10000 - totalTime * 20));
           const timeFormatted = totalTime.toFixed(1);
@@ -513,7 +576,6 @@
 
           const startLevel = (next) => {
             setTransitioning(true);
-            // 提速：将延迟从 700ms 降低至 250ms
             setTimeout(() => { 
                 if (next === 2) setStartTime(Date.now());
                 if (next === 5) setTotalTime((Date.now() - startTime) / 1000);
@@ -523,12 +585,11 @@
           };
 
           return (
-            /* 提速：将 duration-1000 缩短为 duration-400, 模糊从 blur-xl 降为 blur-md */
             <div className={`min-h-screen bg-[#FDFCF8] transition-all duration-400 ${transitioning ? 'opacity-0 blur-md scale-[0.98]' : 'opacity-100'}`}>
               <ArtFilters />
               {level === 0 && <StartPage onStart={() => startLevel(1)} />}
               {level === 1 && <LevelObserver onWin={() => startLevel(2)} />}
-              {level === 2 && <LevelEscape onWin={() => startLevel(3)} />}
+              {level === 2 && <LevelEscape key={Date.now()} onWin={() => startLevel(3)} />}
               {level === 3 && <LevelCapture onWin={() => startLevel(4)} />}
               {level === 4 && <LevelMirrorPuzzle key={Date.now()} onWin={() => startLevel(5)} />}
               {level === 5 && <Celebration totalTime={totalTime} onRestart={() => setLevel(0)} onPrev={() => setLevel(4)} />}
