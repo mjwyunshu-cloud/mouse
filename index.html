@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鼠猫纠缠态：观测者协议</title>
+    <title>鼠猫纠缠态：观测者协议 (云树cloudtree 版)</title>
     <!-- 加载核心运行环境 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -17,7 +17,7 @@
             -webkit-font-smoothing: antialiased;
             overflow: hidden;
             user-select: none;
-            touch-action: none; /* 防止页面缩放和滚动干扰游戏 */
+            touch-action: none; /* 防止移动端滚动干扰 */
         }
 
         .mosaic-grid-bg {
@@ -25,13 +25,13 @@
           background-size: 60px 60px;
         }
 
-        .fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        .fade-in { animation: fadeIn 0.6s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
         .quantum-wobble { animation: wobble 8s ease-in-out infinite; }
         @keyframes wobble { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-10px, -15px) rotate(1.2deg); } }
         
-        /* 增强反馈的按钮：具有物理下压感 */
+        /* 深度触感按钮 */
         .art-button {
           background: #3D3D3D; color: #FDFCF8; padding: 1rem 3rem; border-radius: 10px;
           font-weight: 500; letter-spacing: 0.4em; border: 2px solid #1A1A1A;
@@ -39,8 +39,9 @@
           transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
           filter: url(#handDrawnLine);
           font-size: 14px;
+          cursor: pointer;
         }
-        @media (min-width: 768px) { .art-button { padding: 1.2rem 4rem; font-size: 16px; } }
+        @media (min-width: 768px) { .art-button { padding: 1.2rem 4.5rem; font-size: 16px; box-shadow: 0 8px 0 #1A1A1A; } }
         .art-button:active { 
             transform: translateY(4px); 
             box-shadow: 0 1px 0 #1A1A1A;
@@ -53,6 +54,7 @@
           box-shadow: 0 4px 0 #3D3D3D;
           transition: all 0.1s; filter: url(#handDrawnLine);
           font-size: 13px;
+          cursor: pointer;
         }
         .art-button-secondary:active { 
             transform: translateY(3px); 
@@ -61,14 +63,14 @@
         }
 
         .obstacle-red-double {
-            position: absolute; width: 34px; height: 34px; 
+            position: absolute; width: 30px; height: 30px; 
             border: 2px solid #D66B6B; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             filter: url(#handDrawnLine);
         }
-        .obstacle-red-double::after { content: ''; width: 14px; height: 14px; border: 1.5px solid #D66B6B; border-radius: 50%; }
+        .obstacle-red-double::after { content: ''; width: 12px; height: 12px; border: 1.5px solid #D66B6B; border-radius: 50%; }
 
-        /* 第三关专属：警长重影动效 */
+        /* 警长重影动效 */
         .cat-ghost-glow {
             filter: drop-shadow(0 0 15px rgba(0,0,0,0.1));
             animation: cat-pulse 2s infinite ease-in-out;
@@ -79,8 +81,8 @@
         }
 
         .target-blue-ring {
-            position: absolute; width: 50px; height: 50px; 
-            border: 2.2px solid #8FAADC; border-radius: 50%;
+            position: absolute; width: 44px; height: 44px; 
+            border: 2px solid #8FAADC; border-radius: 50%;
             opacity: 0.5; animation: art-pulse 4s infinite;
         }
         @keyframes art-pulse { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } }
@@ -88,31 +90,33 @@
         .portal-spin { animation: p-spin 6s linear infinite; }
         @keyframes p-spin { from { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } to { transform: rotate(360deg) scale(1); } }
 
-        /* 手机端手绘方向键反馈增强 */
-        .dpad-btn {
-            width: 64px; height: 64px;
-            background: white; border: 2.5px solid #3D3D3D;
-            border-radius: 15px; display: flex; align-items: center; justify-content: center;
-            filter: url(#handDrawnLine);
-            font-weight: bold; color: #3D3D3D; font-size: 22px;
-            box-shadow: 0 6px 0 #3D3D3D;
-            transition: all 0.05s;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .dpad-btn:active { 
-            transform: translateY(4px); 
-            box-shadow: 0 2px 0 #3D3D3D; 
-            background: #D1CEC7;
-            color: black;
-        }
-
-        /* 碎片动效 */
         .bit-glow {
             animation: bit-float 2s infinite ease-in-out;
         }
         @keyframes bit-float {
             0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
             50% { transform: translateY(-5px) scale(1.2); opacity: 1; }
+        }
+
+        /* 移动端手绘方向键 */
+        .dpad-btn {
+            width: 58px; height: 58px;
+            background: white; border: 2px solid #3D3D3D;
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            filter: url(#handDrawnLine);
+            font-weight: bold; color: #3D3D3D; font-size: 20px;
+            box-shadow: 0 5px 0 #3D3D3D;
+            transition: all 0.05s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .dpad-btn:active { 
+            transform: translateY(4px); 
+            box-shadow: 0 1px 0 #3D3D3D; 
+            background: #F0EDE6;
+        }
+
+        .copyright-text {
+            font-size: 9px; font-weight: bold; color: #BBB; letter-spacing: 0.3em; text-transform: uppercase;
         }
     </style>
 </head>
@@ -125,7 +129,7 @@
         // --- 触感辅助函数 ---
         const hapticFeedback = () => {
             if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(15); 
+                window.navigator.vibrate(12); 
             }
         };
 
@@ -145,7 +149,7 @@
           </svg>
         );
 
-        // --- 1:1 手绘鼠鼠 ---
+        // --- 角色模型 ---
         const MouseEntity = ({ className, style, highSaturation = true, holdingController = false }) => (
           <svg viewBox="0 0 100 100" className={`${className} ${highSaturation ? '' : 'grayscale opacity-60'}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M75 60 C 90 65, 100 50, 95 35 C 90 20, 75 25, 70 35" stroke="#E6A6B3" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 4" />
@@ -167,7 +171,6 @@
           </svg>
         );
 
-        // --- 1:1 手绘黑猫警长 ---
         const CatEntity = ({ className, style, isGhost = false, allBlack = false, pose = 'mop' }) => (
           <svg viewBox="0 0 100 140" className={`${className} ${isGhost ? 'opacity-30 grayscale' : ''}`} style={{ ...style, filter: 'url(#handDrawnLine)' }} fill="none" xmlns="http://www.w3.org/2000/svg">
             {pose === 'mop' && <rect x="88" y="5" width="4" height="125" rx="2" fill={allBlack ? "#000" : "#7A6F62"} />}
@@ -188,9 +191,9 @@
         );
 
         const DPad = ({ onMove }) => (
-          <div className="flex flex-col items-center gap-2 mt-10 md:mt-12 lg:hidden">
+          <div className="flex flex-col items-center gap-2 mt-6 lg:hidden">
             <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(0, -1); }} className="dpad-btn">↑</button>
-            <div className="flex gap-14">
+            <div className="flex gap-12">
               <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(-1, 0); }} className="dpad-btn">←</button>
               <button onTouchStart={(e) => { e.preventDefault(); hapticFeedback(); onMove(1, 0); }} className="dpad-btn">→</button>
             </div>
@@ -198,40 +201,34 @@
           </div>
         );
 
+        // --- 0. 首页：修正按钮位置 ---
         const StartPage = ({ onStart }) => {
           const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-          const handleMove = (e) => {
-              const x = e.touches ? e.touches[0].clientX : e.clientX;
-              const y = e.touches ? e.touches[0].clientY : e.clientY;
-              setMousePos({ x: (x/window.innerWidth-0.5)*20, y: (y/window.innerHeight-0.5)*20 });
-          };
           return (
-            <div onMouseMove={handleMove} onTouchMove={handleMove}
-                 className="flex flex-col items-center justify-center min-h-screen text-center px-6 overflow-hidden relative pb-32 pt-10">
+            <div onMouseMove={(e) => setMousePos({ x: (e.clientX/window.innerWidth-0.5)*20, y: (e.clientY/window.innerHeight-0.5)*20 })} 
+                 className="flex flex-col items-center justify-between h-screen w-full text-center overflow-hidden relative py-12 px-6">
               <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" style={{ filter: 'url(#handDrawnLine)' }}>
                 <path d="M-100 800 Q 200 650 500 780 T 1200 680 V 1000 H -100 Z" fill="url(#pencilTexture)" />
                 <path d="M50 300 Q 150 250 250 320 T 450 300" stroke="#BBB" fill="none" strokeWidth="1.5" />
-                <circle cx="850" cy="150" r="40" stroke="#BBB" fill="none" strokeDasharray="5 5" />
               </svg>
-              
-              <div className="relative w-full max-w-sm aspect-square flex items-center justify-center scale-90 md:scale-100">
-                <div className="absolute transition-transform duration-700 ease-out z-10" style={{ transform: `translate(${mousePos.x * -2.5}px, ${mousePos.y * -2.5}px)`, left: '10%', top: '20%' }}>
-                  <div className="opacity-70 grayscale scale-75 rotate-[-12deg] quantum-wobble"><CatEntity className="w-32 md:w-44 h-auto" /></div>
+              <div className="space-y-4 z-30 pt-4">
+                  <h1 className="text-[60px] md:text-[95px] font-light tracking-tighter text-slate-800 italic leading-none select-none" style={{ filter: 'url(#handDrawnLine)' }}>鼠猫纠缠态</h1>
+                  <p className="text-slate-500 text-[12px] md:text-[14px] font-bold tracking-[1.5em] uppercase pl-[1.2em]">鼠猫大作 · 观测者协议</p>
+              </div>
+              <div className="relative w-full max-w-4xl h-[350px] flex items-center justify-center scale-90 md:scale-100">
+                <div className="absolute transition-transform duration-700 ease-out z-10" style={{ transform: `translate(${mousePos.x * -2.5}px, ${mousePos.y * -2.5}px)`, left: '20%', top: '25%' }}>
+                  <div className="opacity-80 grayscale scale-75 md:scale-90 rotate-[-12deg] quantum-wobble"><CatEntity className="w-44 md:w-52 h-auto" /></div>
                 </div>
-                <div className="relative z-20 transition-transform duration-200 ease-out" style={{ transform: `translate(${mousePos.x * 1}px, ${mousePos.y * 1}px)` }}>
-                  <div className="w-56 h-56 md:w-64 md:h-64 rounded-[4rem] bg-white/40 backdrop-blur-md border-2 border-white/50 shadow-xl flex items-center justify-center relative">
-                     <MouseEntity className="w-36 h-auto md:w-44 filter drop-shadow(0 20px 40px rgba(0,0,0,0.06))" holdingController={true} />
-                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-[#3D3D3D] text-[#FDFCF8] text-[8px] md:text-[9px] font-black tracking-[0.5em] rounded-xl shadow-2xl uppercase">The Observer</div>
+                <div className="relative z-20 transition-transform duration-200 ease-out" style={{ transform: `translate(${mousePos.x * 1.2}px, ${mousePos.y * 1.2}px)` }}>
+                  <div className="w-56 h-56 md:w-72 md:h-72 rounded-[4rem] bg-white/40 backdrop-blur-md border-2 border-white/50 shadow-xl flex items-center justify-center relative">
+                     <MouseEntity className="w-32 h-auto md:w-48 filter drop-shadow(0 20px 40px rgba(0,0,0,0.06))" holdingController={true} />
+                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-[#3D3D3D] text-[#FDFCF8] text-[8px] font-black tracking-[0.5em] rounded-xl shadow-2xl uppercase">The Observer</div>
                   </div>
                 </div>
               </div>
-
-              <div className="space-y-12 z-30 mt-12 md:mt-16">
-                <div className="space-y-4">
-                  <h1 className="text-[50px] md:text-[85px] font-light tracking-tighter text-slate-800 italic leading-none select-none" style={{ filter: 'url(#handDrawnLine)' }}>鼠猫纠缠态</h1>
-                  <p className="text-slate-500 text-[10px] md:text-[13px] font-bold tracking-[1.2em] uppercase pl-[1.2em]">鼠猫大作 · 观测者协议</p>
-                </div>
+              <div className="z-30 space-y-8">
                 <button onClick={() => { hapticFeedback(); onStart(); }} className="art-button">启动实验协议 (START)</button>
+                <div className="copyright-text pt-4">© 2026 云树cloudtree 版权所有</div>
               </div>
             </div>
           );
@@ -239,12 +236,12 @@
 
         const LevelObserver = ({ onWin }) => {
           const [step, setStep] = useState(0);
-          const quotes = ["叠加态：警长正处于‘既想吃鱼又在拖地’的玄学平衡中，不要叫醒他。", "观测者效应：你的目光比猫薄荷还管用，一看他，他就不得不变成一个定值。", "退相干：实验室的噪音让波函数破了防，现实总爱在这种尴尬时刻坍缩。", "纠缠：当你抓着鼠鼠的尾巴，猫警长在那边也会跟着打喷嚏。", "观测点已对焦。准备好围观这场伟大的、毫无意义的量子博弈了吗？"];
+          const quotes = ["欢迎来到实验室。在这里，常识是第一个坍缩的受害者。", "叠加态：警长正处于‘既想吃鱼又在拖地’的玄学平衡中，不要叫醒他。", "观测者效应：你的目光比猫薄荷还管用，一看他，他就不得不变成一个定值。", "退相干：实验室的噪音让波函数破了防，现实总爱在这种尴尬时刻坍缩。", "观测点已对焦。准备好围观这场伟大的、毫无意义的量子博弈了吗？"];
           return (
-            <div className="flex flex-col items-center justify-center min-h-screen px-8 space-y-16 text-center fade-in">
-              <div className="p-10 md:p-16 bg-white/60 rounded-[3rem] md:rounded-[4rem] shadow-sm border border-slate-200 italic text-slate-500 text-lg md:text-xl flex items-center justify-center min-h-[220px] max-w-2xl leading-relaxed" style={{ filter: 'url(#handDrawnLine)' }}>"{quotes[step]}"</div>
-              <div className="flex justify-between relative w-full max-w-sm py-8">
-                <div className="absolute top-1/2 left-12 right-12 h-[1px] bg-slate-300 -z-10" />
+            <div className="flex flex-col items-center justify-center min-h-screen px-8 space-y-12 text-center fade-in">
+              <div className="p-10 md:p-20 bg-white/60 rounded-[3rem] md:rounded-[5rem] shadow-xl border border-slate-200 italic text-slate-500 text-lg md:text-2xl flex items-center justify-center min-h-[200px] max-w-3xl leading-relaxed" style={{ filter: 'url(#handDrawnLine)' }}>"{quotes[step]}"</div>
+              <div className="flex justify-between relative w-full max-w-sm py-8 px-6">
+                <div className="absolute top-1/2 left-10 right-10 h-[1px] bg-slate-300 -z-10" />
                 {[0,1,2,3,4].map(i => <div key={i} className={`w-3 h-3 rounded-full border-2 transition-all duration-700 ${i===step?'bg-slate-700 border-slate-700 scale-150 shadow-lg':i<step?'bg-slate-400 border-transparent':'bg-white border-slate-200'}`} />)}
               </div>
               <button onClick={() => { hapticFeedback(); step < 4 ? setStep(s => s+1) : onWin(); }} className="art-button">{step < 4 ? '同步认知' : '锁定现实'}</button>
@@ -252,7 +249,7 @@
           );
         };
 
-        // --- 2. 第二关：深化版绝地逃亡 (碎片收集 + 规则提示) ---
+        // --- 2. 第二关：深化逃亡 (修正手机版棋盘尺寸与间距) ---
         const LevelEscape = ({ onWin }) => {
           const size = 8;
           const [mPos, setMPos] = useState({ x: 0, y: 7 });
@@ -261,7 +258,7 @@
           const exit = { x: 7, y: 0 };
           
           const levelConfig = useMemo(() => {
-            const forbidden = [{x:0,y:7}, {x:7,y:0}, {x:7,y:1}, {x:6,y:0}, {x:1,y:7}];
+            const forbidden = [{x:0,y:7}, {x:7,y:0}];
             const getRand = (count, exclude) => {
               const res = [];
               while(res.length < count) {
@@ -270,7 +267,7 @@
               }
               return res;
             };
-            const obs = getRand(6, forbidden);
+            const obs = getRand(8, forbidden);
             const bits = getRand(3, [...forbidden, ...obs]);
             return { obstacles: obs, bits };
           }, []);
@@ -282,19 +279,9 @@
             const nx = mPos.x + dx, ny = mPos.y + dy;
             if (nx<0 || nx>=size || ny<0 || ny>=size) return;
             if (levelConfig.obstacles.some(o => o.x===nx && o.y===ny)) return;
-
             setMPos({ x: nx, y: ny });
-
-            if (bits.some(b => b.x===nx && b.y===ny)) {
-                hapticFeedback();
-                setBits(prev => prev.filter(b => b.x!==nx || b.y!==ny));
-            }
-
-            if (nx === exit.x && ny === exit.y && bits.length === 0) {
-                onWin();
-                return;
-            }
-            
+            if (bits.some(b => b.x===nx && b.y===ny)) setBits(prev => prev.filter(b => b.x!==nx || b.y!==ny));
+            if (nx === exit.x && ny === exit.y && bits.length === 0) { onWin(); return; }
             if ((mv + 1) % 2 === 0) {
               const dX = nx - cPos.x, dY = ny - cPos.y;
               setCPos(p => ({ x: p.x + (Math.abs(dX) > Math.abs(dY) ? Math.sign(dX) : 0), y: p.y + (Math.abs(dY) >= Math.abs(dX) ? Math.sign(dY) : 0) }));
@@ -303,29 +290,24 @@
           };
 
           useEffect(() => {
-            if (mPos.x === cPos.x && mPos.y === cPos.y) {
-                setTimeout(() => { setMPos({x:0, y:7}); setCPos({x:7,y:0}); setMv(0); }, 300);
-            }
+            if (mPos.x === cPos.x && mPos.y === cPos.y) setTimeout(() => { setMPos({x:0, y:7}); setCPos({x:7,y:0}); setMv(0); }, 300);
             const h = (e) => { 
-                if (['ArrowUp','w'].includes(e.key)) move(0,-1); 
-                if (['ArrowDown','s'].includes(e.key)) move(0,1); 
-                if (['ArrowLeft','a'].includes(e.key)) move(-1,0); 
-                if (['ArrowRight','d'].includes(e.key)) move(1,0); 
+                if (['ArrowUp','w','W'].includes(e.key)) move(0,-1); 
+                if (['ArrowDown','s','S'].includes(e.key)) move(0,1); 
+                if (['ArrowLeft','a','A'].includes(e.key)) move(-1,0); 
+                if (['ArrowRight','d','D'].includes(e.key)) move(1,0); 
             };
             window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
           }, [mPos, cPos, mv, bits]);
 
           return (
-            <div className="flex flex-col items-center justify-center min-h-screen px-6 py-10 fade-in overflow-auto">
-              <div className="text-center space-y-4 mb-6">
-                <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.6em] text-[#D66B6B] underline underline-offset-8">维度 02: 深化逃亡</div>
-                <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase max-w-xs mx-auto">
-                    操控鼠鼠移动 · 收集 3 个蓝色观测碎片 · 激活并进入出口门户
-                </p>
-                <div className="text-[11px] font-black text-slate-800 tracking-[0.2em]">收集进度: {collected}/3</div>
+            <div className="flex flex-col items-center justify-center min-h-screen px-4 py-6 fade-in overflow-hidden">
+              <div className="text-center space-y-3 mb-4 md:mb-12">
+                <div className="text-[10px] md:text-[12px] font-bold uppercase tracking-[0.6em] text-[#D66B6B] underline underline-offset-8">维度 02: 深化逃亡</div>
+                <p className="text-slate-400 text-[11px] md:text-[13px] font-medium tracking-[0.1em] uppercase hidden md:block">操控鼠鼠移动 · 收集碎片 · 激活出口</p>
+                <div className="text-[12px] font-black text-slate-800 tracking-[0.3em]">FRAGMENT: {collected}/3</div>
               </div>
-              
-              <div className="bg-white/50 p-3 md:p-6 rounded-[2.5rem] md:rounded-[4rem] shadow-xl border border-white scale-90 md:scale-100 origin-center">
+              <div className="bg-white p-2 md:p-8 rounded-[2rem] md:rounded-[5rem] shadow-xl border border-slate-100 scale-[0.95] md:scale-100">
                 <div className="grid grid-cols-8 border border-slate-200">
                   {Array.from({ length: 64 }).map((_, i) => {
                     const x = i%8, y = Math.floor(i/8);
@@ -334,21 +316,12 @@
                     const isObs = levelConfig.obstacles.some(o => o.x===x && o.y===y);
                     const isBit = bits.some(b => b.x===x && b.y===y);
                     const isEx = exit.x===x && exit.y===y;
-
-                    return <div key={i} className="w-9 h-9 md:w-14 md:h-14 flex items-center justify-center relative border border-slate-50" style={{ background: (x+y)%2===0?'#F9F7F2':'#fff' }}>
-                      {isEx && (
-                        <div className={`absolute inset-1.5 rounded-full portal-spin border ${bits.length === 0 ? 'bg-[#8FAADC]/20 border-[#8FAADC]' : 'bg-slate-100 border-slate-200 opacity-40'}`} />
-                      )}
-                      {isObs && (
-                        <div className="w-2/3 h-2/3 border-2 border-slate-300 rotate-45 flex items-center justify-center opacity-30" style={{ filter: 'url(#handDrawnLine)' }}>
-                            <div className="w-full h-[1px] bg-slate-400"></div>
-                        </div>
-                      )}
-                      {isBit && (
-                        <div className="w-5 h-5 bg-blue-400 rounded-full bit-glow border-2 border-white shadow-sm" />
-                      )}
-                      {isC && <CatEntity className="w-8 h-auto relative z-20" pose="mop" />}
-                      {isM && <MouseEntity className="w-7 h-auto relative z-30" />}
+                    return <div key={i} className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center relative border border-slate-50" style={{ background: (x+y)%2===0?'#F9F7F2':'#fff' }}>
+                      {isEx && <div className={`absolute inset-1.5 rounded-full portal-spin border ${bits.length === 0 ? 'bg-[#8FAADC]/20 border-[#8FAADC]' : 'bg-slate-100 border-slate-200 opacity-40'}`} />}
+                      {isObs && <div className="w-2/3 h-2/3 border border-slate-300 rotate-45 flex items-center justify-center opacity-30"><div className="w-full h-[0.5px] bg-slate-400"></div></div>}
+                      {isBit && <div className="w-5 h-5 bg-blue-400 rounded-full bit-glow border-2 border-white" />}
+                      {isC && <CatEntity className="w-8 md:w-12 h-auto relative z-20" pose="mop" />}
+                      {isM && <MouseEntity className="w-7 md:w-10 h-auto relative z-30" />}
                     </div>;
                   })}
                 </div>
@@ -363,7 +336,6 @@
           const [targets, setTargets] = useState([]);
           const [hazards, setHazards] = useState([]);
           const [status, setStatus] = useState('playing'); 
-          const [isTouching, setIsTouching] = useState(false);
           const catPos = useRef({ x: 50, y: 50 });
           const [displayPos, setDisplayPos] = useState({ x: 50, y: 50 });
           const requestRef = useRef();
@@ -371,7 +343,7 @@
           useEffect(() => {
             if (status !== 'playing') return;
             const s1 = setInterval(() => setTargets(p => [...p, { id: Math.random(), x: 15+Math.random()*70, y: 15+Math.random()*70 }].slice(-5)), 1500);
-            const s2 = setInterval(() => setHazards(p => [...p, { id: Math.random(), x: 5+Math.random()*90, y:-10, speed: 1.2 + Math.random() * 1.5 }].slice(-10)), 850);
+            const s2 = setInterval(() => setHazards(p => [...p, { id: Math.random(), x: 5+Math.random()*90, y:-10, speed: 1.2 + Math.random() * 1.5 }].slice(-10)), 800);
             return () => { clearInterval(s1); clearInterval(s2); };
           }, [status]);
 
@@ -395,47 +367,38 @@
 
           const handleControl = (e) => {
               if(status!=='playing') return;
-              setIsTouching(true);
               const moveEvent = e.touches ? e.touches[0] : e;
               const r = e.currentTarget.getBoundingClientRect();
               catPos.current = { x:(moveEvent.clientX-r.left)/r.width*100, y:(moveEvent.clientY-r.top)/r.height*100 };
           };
 
           return (
-            <div className="flex flex-col items-center justify-center min-h-screen px-6 py-6 fade-in relative">
+            <div className="flex flex-col items-center justify-center min-h-screen px-4 py-6 fade-in relative overflow-hidden">
               <div className="space-y-3 mb-6">
-                  <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-orange-400 underline underline-offset-8">维度 03: 警长抓老鼠</div>
-                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase">黑猫警长已锁定 · 避开高频毒瓶 · 抓捕10个样本</p>
+                  <div className="text-[11px] md:text-[12px] font-bold uppercase tracking-[0.6em] text-orange-400 underline underline-offset-8 text-center">维度 03: 警长抓老鼠</div>
+                  <p className="text-slate-400 text-[11px] md:text-[14px] font-medium tracking-[0.1em] uppercase text-center">移动控制警长 · 抓捕10个样本</p>
               </div>
-              
-              <div className="relative h-[480px] w-full max-w-[400px] md:h-[550px] md:w-[450px] bg-white rounded-[3.5rem] md:rounded-[5rem] shadow-2xl border border-slate-100 overflow-hidden cursor-none z-10"
-                   onMouseMove={handleControl} onTouchMove={handleControl} onTouchStart={handleControl} onTouchEnd={() => setIsTouching(false)}>
+              <div className="relative h-[480px] w-full max-w-[400px] md:h-[650px] md:w-[550px] bg-white rounded-[3rem] md:rounded-[6rem] shadow-2xl border border-slate-100 overflow-hidden cursor-none z-10"
+                   onMouseMove={handleControl} onTouchMove={handleControl}>
                 <div className="absolute inset-0 opacity-10" style={{ background: 'url(#pencilTexture)' }} />
-                
                 {targets.map(m => <div key={m.id} className="absolute animate-pulse" style={{ left: `${m.x}%`, top: `${m.y}%`, transform: 'translate(-50%, -50%)' }}><MouseEntity className="w-12 md:w-16 h-auto" /></div>)}
-                
                 {hazards.map(h => (
                     <div key={h.id} className="absolute" style={{ left: `${h.x}%`, top: `${h.y}%`, transform: 'translate(-50%, -50%)' }}>
-                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D66B6B" strokeWidth="2" style={{ filter: 'url(#handDrawnLine)' }}>
-                        <path d="M10 2v8L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45L14 10V2" />
-                        <path d="M8.5 2h7" strokeDasharray="2 2" />
+                      <svg width="34" height="34" md-width="42" viewBox="0 0 24 24" fill="none" stroke="#D66B6B" strokeWidth="2" style={{ filter: 'url(#handDrawnLine)' }}>
+                        <path d="M10 2v8L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45L14 10V2" /><path d="M8.5 2h7" strokeDasharray="2 2" />
                       </svg>
                     </div>
                 ))}
-
-                <div className={`absolute pointer-events-none z-[60] transition-transform duration-150 ${isTouching ? 'scale-110' : 'scale-100'}`} 
-                     style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
-                  <div className="absolute inset-0 -m-4 border-2 border-slate-300 rounded-full opacity-20 cat-ghost-glow" style={{ filter: 'url(#handDrawnLine)' }} />
-                  <CatEntity className="w-24 h-auto md:w-32 filter drop-shadow(0 15px 30px rgba(0,0,0,0.15))" pose="mop" />
+                <div className="absolute pointer-events-none z-[60]" style={{ left: `${displayPos.x}%`, top: `${displayPos.y}%`, transform: 'translate(-50%, -50%)' }}>
+                  <div className="absolute inset-0 -m-5 border-2 border-slate-200 rounded-full opacity-20 cat-ghost-glow" style={{ filter: 'url(#handDrawnLine)' }} />
+                  <CatEntity className="w-24 md:w-32 h-auto filter drop-shadow(0 20px 40px rgba(0,0,0,0.15))" pose="mop" />
                 </div>
-
-                <div className="absolute top-8 left-8 text-[12px] md:text-[14px] font-bold text-slate-300 tracking-[0.5em]">CAPTURED: {score}/10</div>
-                
+                <div className="absolute top-8 left-8 text-[12px] md:text-[16px] font-bold text-slate-300 tracking-[0.5em]">CAPTURED: {score}/10</div>
                 {status !== 'playing' && (
                   <div className="absolute inset-0 z-[100] bg-[#FDFCF8]/95 backdrop-blur-md flex flex-col items-center justify-center text-center p-8 space-y-12">
-                    <div className="p-10 md:p-16 bg-white rounded-[3rem] md:rounded-[5rem] shadow-2xl border border-white max-xs" style={{ filter: 'url(#handDrawnLine)' }}>
-                      <h2 className="text-3xl md:text-4xl font-light text-slate-900 mb-6 italic uppercase">{status==='win'?'观测成功':'实验碎裂'}</h2>
-                      <p className="text-slate-500 text-[11px] md:text-[13px] font-medium tracking-widest uppercase">{status==='win'?'样本已全部锁定。':'警长触碰了高频毒瓶。'}</p>
+                    <div className="p-10 md:p-20 bg-white rounded-[3rem] md:rounded-[5rem] shadow-2xl border border-white max-w-md" style={{ filter: 'url(#handDrawnLine)' }}>
+                      <h2 className="text-3xl md:text-5xl font-light text-slate-900 mb-6 italic uppercase">{status==='win'?'观测成功':'实验碎裂'}</h2>
+                      <p className="text-slate-500 text-[11px] md:text-[14px] font-medium tracking-widest uppercase">{status==='win'?'样本已全部锁定。':'警长触碰了毒瓶。'}</p>
                     </div>
                     <button onClick={() => { hapticFeedback(); status==='win'?onWin():(setScore(0),setHazards([]),setStatus('playing')); }} className="art-button">{status==='win'?'维度 04':'重新校准'}</button>
                   </div>
@@ -449,23 +412,17 @@
           const size = 7;
           const [mPos, setMPos] = useState({ x: 1, y: 3 });
           const [cPos, setCPos] = useState({ x: 5, y: 3 });
-          
           const config = useMemo(() => {
             const getRand = (exclude) => {
                let x, y;
-               do {
-                 x = Math.floor(Math.random() * 7);
-                 y = Math.floor(Math.random() * 7);
-               } while (exclude.some(p => p.x === x && p.y === y));
+               do { x = Math.floor(Math.random() * 7); y = Math.floor(Math.random() * 7); } while (exclude.some(p => p.x === x && p.y === y));
                return { x, y };
             };
             const startPos = [{x:1, y:3}, {x:5, y:3}];
             const tm = getRand(startPos);
             const tc = getRand([...startPos, tm]);
             const obstacles = [];
-            for(let i=0; i<5; i++) {
-                obstacles.push(getRand([...startPos, tm, tc, ...obstacles]));
-            }
+            for(let i=0; i<6; i++) obstacles.push(getRand([...startPos, tm, tc, ...obstacles]));
             return { targetM: tm, targetC: tc, blks: obstacles };
           }, []);
 
@@ -483,25 +440,22 @@
 
           useEffect(() => {
             const h = (e) => { 
-                if (['ArrowUp','w'].includes(e.key)) { hapticFeedback(); move(0,-1); } 
-                if (['ArrowDown','s'].includes(e.key)) { hapticFeedback(); move(0,1); } 
-                if (['ArrowLeft','a'].includes(e.key)) { hapticFeedback(); move(-1,0); } 
-                if (['ArrowRight','d'].includes(e.key)) { hapticFeedback(); move(1,0); } 
+                if (['ArrowUp','w','W'].includes(e.key)) move(0,-1); 
+                if (['ArrowDown','s','S'].includes(e.key)) move(0,1); 
+                if (['ArrowLeft','a','A'].includes(e.key)) move(-1,0); 
+                if (['ArrowRight','d','D'].includes(e.key)) move(1,0); 
             };
             window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
           }, [mPos, cPos, config]);
 
           return (
-            <div className="flex flex-col items-center justify-center min-h-screen px-6 py-10 fade-in overflow-auto">
+            <div className="flex flex-col items-center justify-center min-h-screen px-4 py-10 fade-in overflow-hidden">
               <div className="space-y-3 mb-6 text-center">
-                  <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.5em] text-purple-600 underline underline-offset-8">维度 04：纠缠镜像同步</div>
-                  <p className="text-slate-400 text-[10px] md:text-[12px] font-medium tracking-[0.1em] uppercase max-w-xs mx-auto">
-                    操控鼠鼠移动 · 警长镜像同步 · 利用红色障碍校准间距 · 让黑白角色同时踏入发光点
-                  </p>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.8em] text-purple-600 underline underline-offset-8">维度 04：纠缠镜像同步</div>
+                  <p className="text-slate-400 text-[11px] md:text-[14px] font-medium tracking-[0.1em] uppercase hidden md:block">操控鼠鼠移动 · 校准间距 · 同时踏入发光点</p>
               </div>
-
-              <div className="bg-white/50 p-4 md:p-12 rounded-[3rem] md:rounded-[5rem] shadow-2xl border-2 border-white relative scale-90 md:scale-95 origin-center">
-                <div className="grid grid-cols-7 border-t border-l border-slate-200 mosaic-grid-bg relative z-10">
+              <div className="bg-white p-4 md:p-12 rounded-[3rem] md:rounded-[6rem] shadow-xl border border-slate-100 scale-[0.9] md:scale-100">
+                <div className="grid grid-cols-7 border-t border-l border-slate-200 mosaic-grid-bg">
                   {Array.from({ length: 49 }).map((_, i) => {
                     const x = i % 7, y = Math.floor(i / 7);
                     const isM = mPos.x === x && mPos.y === y;
@@ -509,15 +463,13 @@
                     const isTM = config.targetM.x === x && config.targetM.y === y;
                     const isTC = config.targetC.x === x && config.targetC.y === y;
                     const showB = config.blks.some(b => b.x === x && b.y === y);
-                    return (
-                      <div key={i} className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center relative border-r border-b border-slate-200">
-                        {isTM && <div className="target-blue-ring scale-75 md:scale-100" />}
-                        {isTC && <div className="target-blue-ring border-blue-400 scale-75 md:scale-100" />} 
-                        {showB && <div className="obstacle-red-double scale-75 md:scale-100" />}
-                        {isM && <MouseEntity className="w-8 h-auto md:w-16 relative z-30 hand-drawn-shadow" />}
-                        {isC && <CatEntity className="w-8 h-auto md:w-14 relative z-20" allBlack={true} pose="no-mop" />}
-                      </div>
-                    );
+                    return <div key={i} className="w-11 h-11 md:w-16 md:h-16 flex items-center justify-center relative border-r border-b border-slate-200">
+                        {isTM && <div className="target-blue-ring scale-[0.8] md:scale-100" />}
+                        {isTC && <div className="target-blue-ring border-blue-400 scale-[0.8] md:scale-100" />} 
+                        {showB && <div className="obstacle-red-double scale-[0.8] md:scale-100" />}
+                        {isM && <MouseEntity className="w-8 md:w-14 h-auto relative z-30" />}
+                        {isC && <CatEntity className="w-7 md:w-12 h-auto relative z-20" allBlack={true} pose="no-mop" />}
+                      </div>;
                   })}
                 </div>
               </div>
@@ -530,40 +482,33 @@
           const score = Math.max(1000, Math.floor(10000 - totalTime * 20));
           const timeFormatted = totalTime.toFixed(1);
           return (
-            <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center space-y-6 md:space-y-12 fade-in pt-4 pb-8 overflow-y-auto">
-              <div className="relative flex justify-center items-end gap-8 md:gap-16 scale-75 md:scale-100">
-                <div className="absolute inset-0 bg-blue-50/20 rounded-full blur-[80px] md:blur-[180px] scale-150" />
-                <MouseEntity className="w-36 md:w-56 h-auto brightness-110 hand-drawn-shadow" holdingController={true} />
-                <CatEntity className="w-24 md:w-44 h-auto opacity-80" pose="no-mop" />
+            <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center space-y-4 md:space-y-6 fade-in pt-4 pb-12 overflow-y-auto">
+              <div className="relative flex justify-center items-end gap-12 md:gap-24 scale-75 md:scale-100 mb-2">
+                <div className="absolute inset-0 bg-blue-50/20 rounded-full blur-[100px] md:blur-[180px] scale-150" />
+                <MouseEntity className="w-40 md:w-64 h-auto brightness-110" holdingController={true} />
+                <CatEntity className="w-28 md:w-48 h-auto opacity-80" pose="no-mop" />
               </div>
               
-              <div className="space-y-6 md:space-y-10">
+              <div className="space-y-4 md:space-y-8">
                 <div className="space-y-2 md:space-y-4">
-                  <h1 className="text-[32px] md:text-[54px] font-bold tracking-tight text-[#3D3D3D] italic uppercase leading-tight" style={{ filter: 'url(#handDrawnLine)' }}>鼠鼠猫猫赢啦！</h1>
-                  <p className="text-slate-400 text-[11px] md:text-[14px] font-bold tracking-[0.5em] uppercase">Observation Mastered</p>
-                  
-                  <div className="flex gap-6 md:gap-10 justify-center items-center py-4">
-                        <div className="text-center">
-                            <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-1">Time</p>
-                            <p className="text-2xl md:text-3xl font-light italic text-slate-800">{timeFormatted}s</p>
-                        </div>
-                        <div className="w-[1px] h-8 bg-slate-200" />
-                        <div className="text-center">
-                            <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-1">Score</p>
-                            <p className="text-2xl md:text-3xl font-light italic text-blue-600">{score}</p>
-                        </div>
+                  <h1 className="text-[36px] md:text-[64px] font-bold tracking-tight text-[#3D3D3D] italic uppercase leading-tight" style={{ filter: 'url(#handDrawnLine)' }}>鼠鼠猫猫赢啦！</h1>
+                  <p className="text-slate-400 text-[12px] md:text-[16px] font-bold tracking-[0.5em] uppercase">Observation Mastered</p>
+                  <div className="flex gap-10 md:gap-16 justify-center items-center py-4">
+                        <div className="text-center"><p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Time</p><p className="text-2xl md:text-5xl font-light italic text-slate-800">{timeFormatted}s</p></div>
+                        <div className="w-[1px] h-10 md:h-12 bg-slate-200" /><div className="text-center"><p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Score</p><p className="text-2xl md:text-5xl font-light italic text-blue-600">{score}</p></div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 justify-center items-center">
-                    <button onClick={() => { hapticFeedback(); onPrev(); }} className="art-button-secondary w-full max-w-[240px]">重返上一关</button>
-                    <button onClick={() => { hapticFeedback(); onRestart(); }} className="art-button w-full max-w-[240px]">重启观测实验</button>
+                <div className="flex flex-col md:flex-row gap-4 justify-center items-center px-4">
+                    <button onClick={() => { hapticFeedback(); onPrev(); }} className="art-button-secondary w-full md:w-auto">重返上一关</button>
+                    <button onClick={() => { hapticFeedback(); onRestart(); }} className="art-button w-full md:w-auto">重启观测实验</button>
                 </div>
               </div>
               
-              <p className="text-slate-400 text-[10px] md:text-[12px] leading-relaxed px-4 font-light italic text-center max-w-sm">
-                “这不是某一方的获胜，而是他们一起赢得了这场量子共振里的和谐解。”
-              </p>
+              <div className="space-y-2 mt-4">
+                <p className="text-slate-400 text-[10px] md:text-[14px] leading-relaxed px-6 font-light italic text-center max-w-2xl">“这不是某一方的获胜，而是他们一起赢得了这场共振中的和谐解。”</p>
+                <div className="copyright-text">© 2026 云树cloudtree 版权所有</div>
+              </div>
             </div>
           );
         };
